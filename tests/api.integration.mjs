@@ -22,8 +22,8 @@ check((await b('entries/'+eid+'/comments/'+cid,'PATCH',{content:'modified'})).st
 check((await b('entries/'+eid+'/comments/'+cid,'PATCH',{hidden:true})).status===403,'shared editor cannot hide');
 check((await a('entries/'+eid+'/comments/'+cid,'PATCH',{hidden:true})).status===200,'owner hides');
 check((await guest('entries/'+eid+'/comments')).data[0].content==='','hidden text redacted');
-check((await a('entries/'+eid+'/comments','POST',{dice:true,sides:20,count:3})).status===200,'dice');
-const dice=JSON.parse((await a('entries/'+eid+'/comments')).data.find(x=>x.dice).dice);check(dice.values.length===3&&dice.values.every(n=>n>=1&&n<=20),'dice bounds');
+check((await a('entries/'+eid+'/comments','POST',{content:'공격 [dice:3d20] 결과'})).status===200,'dice');
+const dice=JSON.parse((await a('entries/'+eid+'/comments')).data.find(x=>x.dice).dice)[0];check(dice.values.length===3&&dice.values.every(n=>n>=1&&n<=20),'dice bounds');
 check((await a('entries/'+eid+'/comments','POST',{content:'x'.repeat(1501)})).status===400,'comment length');
 check((await a('entries','POST',{title:'too long',content:'x'.repeat(5001)})).status===400,'thread length');
 const sid=(await a('entries','POST',{title:'secret '+suffix,content:'hiddenphrase'+suffix,isSecret:true,secretPw:'secret-password'})).data.id;
@@ -58,5 +58,25 @@ check((await guest('entries/'+wid)).status===404,'deleted wiki unavailable');
 check((await c('entries/'+eid,'DELETE',{})).status===200,'deputy deletes thread');
 check((await c('entries/practice','DELETE',{})).status===400,'practice cannot be deleted');
 check((await a('audit')).data.some(x=>x.action==='delete-entry'),'admin activity logged');
+
+const practiceDice=(await a('entries/practice/comments','POST',{content:'왼쪽 [dice:2d6] 오른쪽 [dice:1d20]',dice:[{total:999}]})).data.id;
+const recorded=(await a('entries/practice/comments')).data.find(x=>x.id===practiceDice);const rolled=JSON.parse(recorded.dice);
+check(rolled.length===2&&rolled[0].start==='왼쪽 '.length&&rolled[0].values.length===2&&rolled[1].values.length===1,'multiple inline rolls with positions');
+check(rolled.every(r=>r.total===r.values.reduce((a,b)=>a+b,0)),'client cannot forge dice');
+check((await a('entries/practice/comments/'+practiceDice,'PATCH',{content:'reroll [dice:1d6]'})).status===403,'dice cannot be rerolled through editing');
+check((await a('entries/practice/comments/'+pc,'PATCH',{content:'insert [dice:1d6]'})).status===400,'editing cannot add dice');
+check((await a('entries/practice/comments','POST',{content:'[dice:1d999]'})).status===400,'invalid dice rejected');
+const literal=(await a('entries/practice/comments','POST',{content:'`[dice:1d6]`'})).data.id;
+check(!(await a('entries/practice/comments')).data.find(x=>x.id===literal).dice,'code example does not roll');
+const before=(await a('entries/practice/comments')).data.length;
+check((await guest('entries/practice/comments/'+practiceDice,'DELETE',{})).status===401,'guest cannot delete practice comment');
+check((await c('entries/practice/comments/'+practiceDice,'DELETE',{})).status===200,'deputy deletes practice dice comment');
+const after=(await a('entries/practice/comments')).data;const deleted=after.find(x=>x.id===practiceDice);
+check(after.length===before&&deleted.deleted===1&&deleted.content===''&&deleted.dice===null,'deleted tombstone retains count and redacts payload');
+check((await a('entries/practice/comments/'+pc,'DELETE',{})).status===200,'super deletes practice comment');
+check((await a('entries/practice/comments/'+pc,'PATCH',{hidden:false})).status===410,'deleted comment cannot be unhidden');
+check((await guest('maintenance/reset','POST',{confirm:'RESET_ALL_RP_LAND'})).status===403,'reset requires separate secret');
+await a('entries/practice/comments','POST',{character:'서식 확인',content:'[color=#cc3344]붉은 문장[/color] 그리고 [ruby=은하]銀河[/ruby]\n\n[transparent]투명 문장[/transparent]\n\n[fold=펼쳐서 읽기]접힌 이야기와 **굵은 글씨**[/fold]\n\n결과 [dice:2d6]'});
 console.log(`PASS ${assertions} integration assertions`);
+
 
