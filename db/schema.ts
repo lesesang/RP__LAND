@@ -1,0 +1,11 @@
+import { sqliteTable, text, integer, index, uniqueIndex } from 'drizzle-orm/sqlite-core';
+export const users=sqliteTable('users',{id:text('id').primaryKey(),username:text('username').notNull().unique(),password:text('password').notNull(),role:text('role').notNull().default('USER'),active:integer('active').notNull().default(1),created:text('created').notNull()});
+export const sessions=sqliteTable('sessions',{token:text('token').primaryKey(),userId:text('user_id').notNull(),expires:integer('expires').notNull()},t=>[index('idx_sessions_user').on(t.userId)]);
+export const entries=sqliteTable('entries',{id:text('id').primaryKey(),kind:text('kind').notNull(),title:text('title').notNull(),content:text('content').notNull(),authorId:text('author_id'),secret:text('secret'),categories:text('categories').notNull().default('[]'),created:text('created').notNull(),updated:text('updated').notNull(),deleted:integer('deleted').notNull().default(0)},t=>[index('idx_entries_kind_date').on(t.kind,t.created)]);
+export const comments=sqliteTable('comments',{id:text('id').primaryKey(),entryId:text('entry_id').notNull(),authorId:text('author_id').notNull(),character:text('character').notNull(),content:text('content').notNull(),hidden:integer('hidden').notNull().default(0),dice:text('dice'),created:text('created').notNull(),updated:text('updated').notNull()},t=>[index('idx_comments_entry').on(t.entryId,t.created)]);
+export const editors=sqliteTable('editors',{entryId:text('entry_id').notNull(),userId:text('user_id').notNull()},t=>[uniqueIndex('idx_editors_pair').on(t.entryId,t.userId)]);
+export const names=sqliteTable('names',{userId:text('user_id').notNull(),name:text('name').notNull()},t=>[uniqueIndex('idx_names_pair').on(t.userId,t.name)]);
+export const categories=sqliteTable('categories',{id:text('id').primaryKey(),name:text('name').notNull().unique()});
+export const grants=sqliteTable('grants',{token:text('token').primaryKey(),entryId:text('entry_id').notNull(),expires:integer('expires').notNull()});
+export const attempts=sqliteTable('attempts',{key:text('key').primaryKey(),count:integer('count').notNull(),expires:integer('expires').notNull()});
+export const audit=sqliteTable('audit',{id:text('id').primaryKey(),actor:text('actor'),action:text('action').notNull(),target:text('target').notNull(),created:text('created').notNull()});
