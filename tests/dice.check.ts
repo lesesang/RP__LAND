@@ -1,0 +1,15 @@
+import assert from 'node:assert/strict';
+import {rollDice,diceTokens} from '../lib/roleplay';
+assert.equal(rollDice('[dice:1x0..0]')[0].total,0);
+assert.equal(rollDice('[dice:1x100000000..100000000+100000000]')[0].total,200000000);
+assert.equal(rollDice('[dice:1x0..0-100000000]')[0].total,-100000000);
+const r=rollDice('[dice:100x0..99!-3]')[0];
+assert.equal(new Set(r.values).size,100);
+assert.equal(r.total,4650);
+assert.throws(()=>diceTokens('[dice:3x0..1!]'));
+assert.throws(()=>diceTokens('[dice:1x1..0]'));
+assert.throws(()=>diceTokens('[dice:1x0..100000001]'));
+assert.throws(()=>diceTokens('[dice:101x0..999]'));
+assert.equal(rollDice('`[dice:2d6]`').length,0);
+assert.equal(rollDice('[dice:2d6]')[0].values.length,2);
+console.log('PASS dice boundaries, unique whole range, signed modifiers, legacy and code literals');

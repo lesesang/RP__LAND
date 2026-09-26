@@ -18,3 +18,7 @@ assert.equal((anchors.match(/<a /g)||[]).length,1);
 const literal=renderToStaticMarkup(<Rich text={'`[ruby=읽기]본문[/ruby]`'}/>);
 assert.ok(!literal.includes('<ruby'));
 console.log('PASS rich text: line breaks, ruby, nested styles, fold structure, anchors, code literals');
+const gaps=renderToStaticMarkup(<Rich text={'첫째\n둘째\n\n\n셋째\n'}/>);
+assert.match(gaps, /첫째<br\/>\n둘째/);
+assert.match(gaps,/height:3.8em/);
+assert.match(gaps,/height:1.9em/);

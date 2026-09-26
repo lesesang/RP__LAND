@@ -22,7 +22,7 @@ export function isPracticeResponseLink(href = '') {
 // Replace only recognized non-code tokens with private placeholders. User input
 // cannot supply those placeholders; every token is subsequently rendered as React.
 export function prepareMarkup(source: string) {
-  const text = source.replace(/[\uE000\uE001]/g, '\uFFFD');
+  const text = source.replace(/\r\n?/g, '\n').replace(/[\uE000\uE001]/g, '\uFFFD');
   const tokens: MarkupToken[] = [];
   const pattern = /```[\s\S]*?```|`[^`\n]*`|\[(color|ruby|fold)=([^\]\n]{1,120})\]|\[(transparent)\]|\[dice:[^\]]*\]|>>>([a-z0-9-]+)\/(\d+)|>>(\d+)|\+\+([^+\n]+)\+\+/gi;
   let output = '', cursor = 0, m: RegExpExecArray | null;
@@ -58,8 +58,13 @@ export function markupPlugin() {
   return (tree: any) => {
     function visit(node: any) {
       if (!node.children || node.type === 'code' || node.type === 'inlineCode') return;
-      node.children = node.children.flatMap((child: any) => {
-        if (child.type !== 'text') { visit(child); return [child]; }
+      const children = node.children;
+      node.children = children.flatMap((child: any, index: number) => {
+        const previous = children[index - 1];
+        const gap = previous?.position && child.position && previous.type === 'paragraph' && child.type === 'paragraph'
+          ? child.position.start.line - previous.position.end.line - 1 : 0;
+        const spacer = gap > 0 ? [{ type: 'rpGap', data: { hName: 'rp-gap', hProperties: { 'data-lines': gap } }, children: [] }] : [];
+        if (child.type !== 'text') { visit(child); return [...spacer, child]; }
         // Convert CommonMark soft line breaks into explicit br elements.
         return child.value.split(/(\uE000\d+\uE001|\n)/g).filter(Boolean).map((part: string) => {
           if (part === '\n') return { type: 'break' };

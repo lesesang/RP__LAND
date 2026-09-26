@@ -28,12 +28,13 @@ export function Rich({ text, rolls = [], offset = 0, depth = 0, inline = false, 
       }
       case 'dice': {
         const roll = rolls.find(r => r.start === offset + item.start && r.notation === item.raw);
-        return roll ? <span className="dice"><Dices size={20}/>{roll.values.join(' + ')} = {roll.total}<small>D{roll.sides} · 기록된 결과</small></span> : <code className="dice-pending">{item.raw} · 등록할 때 굴림</code>;
+        return roll ? <span className="dice" title={roll.notation + (roll.modifier ? ` · 각 결과에 ${roll.modifier>0?'+':''}${roll.modifier} 보정` : '')}><Dices size={14}/><span>{roll.values.join(', ')}{roll.values.length>1&&<> · 합계 {roll.total}</>}</span></span> : <code className="dice-pending">{item.raw} · 등록할 때 굴림</code>;
       }
     }
     return item.raw;
   }
   const components: any = {
+    'rp-gap': (props: any) => <span aria-hidden="true" className="rp-line-gap" style={{height:`${Number(props['data-lines']) * 1.9}em`}}/>,
     'rp-token': (props: any) => token(Number(props['data-index'])),
     p: ({ node, children }: any) => {
       const only = node?.children?.length === 1 ? node.children[0] : null;
@@ -45,6 +46,8 @@ export function Rich({ text, rolls = [], offset = 0, depth = 0, inline = false, 
       ? <span className="rp-anchor-disabled" title="연습장 레스를 향하는 링크는 비활성화됩니다.">{children}</span>
       : <a {...props} href={href} rel="noopener noreferrer" target={href?.startsWith('?') || href?.startsWith('#') ? undefined : '_blank'}>{children}</a>,
   };
-  const content = <Markdown skipHtml remarkPlugins={[markupPlugin]} components={components}>{prepared.text}</Markdown>;
+  const leading = /^\n+/.exec(prepared.text)?.[0].length || 0;
+  const trailing = /\n+$/.exec(prepared.text)?.[0].length || 0;
+  const content = <>{leading>0&&<span aria-hidden="true" className="rp-line-gap" style={{height:`${leading*1.9}em`}}/>}<Markdown skipHtml remarkPlugins={[markupPlugin]} components={components}>{prepared.text}</Markdown>{trailing>0&&<span aria-hidden="true" className="rp-line-gap" style={{height:`${trailing*1.9}em`}}/>}</>;
   return inline ? <span className="rp-inline-content">{content}</span> : <div className="prose rp-prose">{content}</div>;
 }

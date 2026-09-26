@@ -1,7 +1,8 @@
 // Run only against a disposable local database, never production.
 import assert from 'node:assert/strict';
+import {writeFileSync} from 'node:fs';
 import {spawnSync} from 'node:child_process';
-function sql(query){const r=spawnSync(process.execPath,['--import','./scripts/sites-env.mjs','./node_modules/wrangler/bin/wrangler.js','d1','execute','DB','--local','--config','dist/server/wrangler.json','--persist-to','.wrangler/state','--command',query],{encoding:'utf8'});if(r.status)throw new Error(r.stderr);}
+function sql(query){const r=spawnSync(process.execPath,['--import','./scripts/sites-env.mjs','./node_modules/wrangler/bin/wrangler.js','d1','execute','DB','--local','--config','dist/server/wrangler.json','--persist-to',process.env.TEST_DB_PATH||'.wrangler/state','--command',query],{encoding:'utf8'});if(r.status)throw new Error(r.stderr);}
 const base=process.env.TEST_BASE_URL||'http://127.0.0.1:4173';
 if(!/^http:\/\/(127\.0\.0\.1|localhost):/.test(base))throw new Error('Local test target required');
 const suffix=Date.now();
@@ -63,9 +64,9 @@ const practiceDice=(await a('entries/practice/comments','POST',{content:'왼쪽 
 const recorded=(await a('entries/practice/comments')).data.find(x=>x.id===practiceDice);const rolled=JSON.parse(recorded.dice);
 check(rolled.length===2&&rolled[0].start==='왼쪽 '.length&&rolled[0].values.length===2&&rolled[1].values.length===1,'multiple inline rolls with positions');
 check(rolled.every(r=>r.total===r.values.reduce((a,b)=>a+b,0)),'client cannot forge dice');
-check((await a('entries/practice/comments/'+practiceDice,'PATCH',{content:'reroll [dice:1d6]'})).status===403,'dice cannot be rerolled through editing');
-check((await a('entries/practice/comments/'+pc,'PATCH',{content:'insert [dice:1d6]'})).status===400,'editing cannot add dice');
-check((await a('entries/practice/comments','POST',{content:'[dice:1d999]'})).status===400,'invalid dice rejected');
+check((await a('entries/practice/comments/'+practiceDice,'PATCH',{content:'reroll [dice:1d6]'})).status===200,'practice dice can reroll through editing');
+check((await a('entries/practice/comments/'+pc,'PATCH',{content:'insert [dice:1d6]'})).status===200,'practice editing can add dice');
+check((await a('entries/practice/comments','POST',{content:'[dice:1d100000001]'})).status===400,'invalid dice rejected');
 const literal=(await a('entries/practice/comments','POST',{content:'`[dice:1d6]`'})).data.id;
 check(!(await a('entries/practice/comments')).data.find(x=>x.id===literal).dice,'code example does not roll');
 const before=(await a('entries/practice/comments')).data.length;
@@ -93,6 +94,58 @@ check((await a('entries/practice/comments')).data.length===1499,'legacy practice
 check((await a('entries/practice/comments','POST',{content:'legacy free slot'})).status===200,'legacy tombstones do not consume cap');
 sql("DELETE FROM comments WHERE entry_id='practice'");
 await a('entries/practice/comments','POST',{character:'서식 확인',content:'[color=#cc3344]붉은 문장[/color] 그리고 [ruby=은하]銀河[/ruby]\n\n[transparent]투명 문장[/transparent]\n\n[fold=펼쳐서 읽기]접힌 이야기와 **굵은 글씨**[/fold]\n\n결과 [dice:2d6]'});
+
+const d=client();await d('register','POST',{username:'member'+suffix,password:'test-only-Password!'});await d('login','POST',{username:'member'+suffix,password:'test-only-Password!'});
+const du=(await d('me')).data.user.id;
+const ownDice=(await d('entries/practice/comments','POST',{content:'[dice:3x0..2!-5]'})).data.id;
+const ownRoll=JSON.parse((await d('entries/practice/comments')).data.find(x=>x.id===ownDice).dice)[0];
+check(new Set(ownRoll.values).size===3&&ownRoll.values.every(v=>v>=-5&&v<=-3),'unique draw applies negative modifier per result');
+check((await d('entries/practice/comments/'+ownDice,'PATCH',{content:'[dice:1x100000000..100000000+7]'})).status===200,'ordinary owner edits rolled practice response');
+const edgeRoll=JSON.parse((await d('entries/practice/comments')).data.find(x=>x.id===ownDice).dice)[0];
+check(edgeRoll.values[0]===100000007,'max boundary plus modifier');
+const otherPractice=(await a('entries/practice/comments','POST',{content:'다른 회원의 레스'})).data.id;
+check((await d('entries/practice/comments/'+otherPractice,'DELETE',{})).status===403,'ordinary user cannot delete someone else practice response');
+check((await d('entries/practice/comments/'+ownDice,'DELETE',{})).status===200,'ordinary owner deletes rolled practice response');
+check((await d('entries/practice/comments','POST',{content:'[dice:3x0..1!]'})).status===400,'impossible unique draw rejected');
+check((await d('entries/practice/comments','POST',{content:'[dice:1x0..0]'})).status===200,'zero-only range accepted');
+const multiline='첫째 줄\n둘째 줄\n\n\n넷째 문단 [ruby=은하]銀河[/ruby]\n마지막 줄\n';
+const lineId=(await d('entries/practice/comments','POST',{content:multiline})).data.id;
+const lineRecord=(await d('entries/practice/comments')).data.find(x=>x.id===lineId);
+check(lineRecord.content===multiline,'saved response preserves every line break including trailing blank line');
+writeFileSync('.sites-runtime/saved-response.json',JSON.stringify(lineRecord));
+const later=new Date(Date.now()+86400000).toISOString();
+const scheduleId=(await d('entries','POST',{title:'예약 '+suffix,content:'아직 공개 안 됨',scheduledAt:later,scheduleMeta:{title:false,author:false,categories:false}})).data.id;
+check(!!scheduleId,'ordinary member creates scheduled thread');
+check(!(await guest('entries?q='+suffix)).data.entries.some(e=>e.id===scheduleId),'scheduled thread excluded from normal search');
+const publicSchedule=(await guest('schedule')).data.entries.find(e=>e.id===scheduleId);
+check(publicSchedule&&publicSchedule.title==='예약 스레드'&&publicSchedule.author===null&&publicSchedule.categories==='[]'&&!publicSchedule.canOpen,'schedule metadata redacted and preview closed');
+check((await guest('entries/'+scheduleId)).status===404,'closed preview blocked on server');
+check((await d('entries/'+scheduleId)).data.canDelete===true,'ordinary author can delete pending thread');
+check((await d('entries/'+scheduleId+'/comments','POST',{content:'early'})).status===409,'even author cannot respond before publication');
+check((await d('entries/'+scheduleId+'/editors','POST',{userId:au})).status===200,'pending author shares editing');
+check((await a('entries/'+scheduleId,'PATCH',{title:'공동 예약',content:'수정됨'})).status===200,'authorized editor can edit pending content');
+check((await d('entries/'+scheduleId,'PATCH',{title:'예약 열람',content:'열람 가능',scheduledAt:later,scheduleListed:false,previewOpen:true})).status===200,'author changes schedule settings');
+check(!(await guest('schedule')).data.entries.some(e=>e.id===scheduleId),'unlisted schedule omitted');
+check((await guest('entries/'+scheduleId)).status===200,'open preview readable by direct URL');
+check((await d('schedule?mine=1')).data.entries.some(e=>e.id===scheduleId),'author can find unlisted schedule');
+check((await guest('schedule?mine=1')).status===401,'private schedule list requires login');
+const secretSchedule=(await d('entries','POST',{title:'비밀 예약',content:'비밀 내용',isSecret:true,secretPw:'test-secret',scheduledAt:later})).data.id;
+check(!(await guest('schedule')).data.entries.some(e=>e.id===secretSchedule),'secret schedule hidden by default');
+await d('entries/'+secretSchedule+'/unlock','POST',{password:'test-secret'});
+await d('entries/'+secretSchedule,'PATCH',{title:'비밀 예약',content:'비밀 내용',scheduledAt:later,scheduleListed:true,previewOpen:true});
+check((await guest('entries/'+secretSchedule)).status===403,'secret preview still requires password');
+check((await guest('schedule')).data.entries.some(e=>e.id===secretSchedule),'secret schedule may opt into timeline');
+const removed=(await d('entries','POST',{title:'예약 삭제',content:'본문',scheduledAt:later})).data.id;
+check((await d('entries/'+removed,'DELETE',{})).status===200,'ordinary author deletes pending thread');
+sql(`UPDATE entries SET scheduled_at='2020-01-01T00:00:00.000Z' WHERE id='${scheduleId}'`);
+check((await guest('entries/'+scheduleId)).data.pending===false,'due thread automatically becomes published');
+check((await d('entries/'+scheduleId+'/comments','POST',{content:'공개 후 작성'})).status===200,'due thread accepts responses');
+check((await d('entries/'+scheduleId,'DELETE',{})).status===403,'ordinary author cannot delete after release');
+check((await d('entries/'+scheduleId,'PATCH',{title:'재예약',content:'본문',scheduledAt:later})).status===409,'published thread cannot revert to pending');
+for(let i=0;i<11;i++)await d('entries','POST',{title:'시간표 '+i,content:'본문',scheduledAt:new Date(Date.now()+(i+2)*86400000).toISOString()});
+const pageOne=(await guest('schedule')).data,pageTwo=(await guest('schedule?page=2')).data;
+check(pageOne.entries.length===10&&pageTwo.entries.length>=2,'schedule pagination uses ten entries');
+check(pageOne.entries.every((e,i,arr)=>!i||e.scheduled_at>=arr[i-1].scheduled_at)&&pageTwo.entries[0].scheduled_at>=pageOne.entries[9].scheduled_at,'schedule is ordered by release time across pages');
 console.log(`PASS ${assertions} integration assertions`);
 
 
