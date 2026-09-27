@@ -7,8 +7,8 @@ const base=process.env.TEST_BASE_URL||'http://127.0.0.1:4173';
 if(!/^http:\/\/(127\.0\.0\.1|localhost):/.test(base))throw new Error('Local test target required');
 const suffix=Date.now();
 function client(){let cookies={};return async(path,method='GET',data)=>{const r=await fetch(base+'/api/'+path,{method,headers:{'Content-Type':'application/json',Cookie:Object.entries(cookies).map(([k,v])=>`${k}=${v}`).join('; ')},body:data?JSON.stringify(data):undefined});for(const c of r.headers.getSetCookie()){const[k,...v]=c.split(';')[0].split('=');cookies[k]=v.join('=')}return{status:r.status,data:await r.json()}}}
-const a=client(),b=client(),guest=client();let assertions=0;
-function check(v,msg){assert.ok(v,msg);assertions++}
+const a=client(),b=client(),guest=client();let assertions=0;const results=[];
+function check(v,msg){results.push({name:msg,pass:!!v});assert.ok(v,msg);assertions++}
 for(const [c,n]of[[a,'writer'],[b,'reader']]){check((await c('register','POST',{username:n+suffix,password:'test-only-Password!'})).status===200,'register');check((await c('login','POST',{username:n+suffix,password:'wrong'})).status===401,'wrong password');check((await c('login','POST',{username:n+suffix,password:'test-only-Password!'})).status===200,'login')}
 const uid=(await b('me')).data.user.id;
 check((await guest('entries','POST',{title:'denied',content:'x'})).status===401,'guest write denied');
@@ -42,7 +42,8 @@ check((await b('me','DELETE',{password:'test-only-Password!'})).status===200,'wi
 
 const au=(await a('me')).data.user.id;
 check((await a('setup','POST',{token:'wrong'})).status===403,'wrong bootstrap token denied');
-sql(`UPDATE users SET role='SUPER' WHERE id='${au}'`);
+check((await a('setup','POST',{token:process.env.TEST_SETUP_TOKEN})).status===200,'bootstrap creates first super administrator');
+check((await a('setup','POST',{token:process.env.TEST_SETUP_TOKEN})).status===409,'bootstrap is one-time only');
 const catIds=[];for(let i=0;i<4;i++)catIds.push((await a('categories','POST',{name:'cat'+suffix+'-'+i})).data.id);
 check((await a('entries','POST',{title:'four categories',content:'no',categories:catIds})).status===400,'max three categories');
 check((await a('entries/'+eid,'PATCH',{title:'filtered',content:'body',categories:catIds.slice(0,3)})).status===200,'three categories accepted');
@@ -146,6 +147,8 @@ for(let i=0;i<11;i++)await d('entries','POST',{title:'시간표 '+i,content:'본
 const pageOne=(await guest('schedule')).data,pageTwo=(await guest('schedule?page=2')).data;
 check(pageOne.entries.length===10&&pageTwo.entries.length>=2,'schedule pagination uses ten entries');
 check(pageOne.entries.every((e,i,arr)=>!i||e.scheduled_at>=arr[i-1].scheduled_at)&&pageTwo.entries[0].scheduled_at>=pageOne.entries[9].scheduled_at,'schedule is ordered by release time across pages');
+await import('./role-matrix.mjs').then(m=>m.run({a,c,d,guest,au,cu,du,suffix,client,check,sql,base,later}));
+writeFileSync('.sites-runtime/test-results.json',JSON.stringify({date:new Date().toISOString(),assertions,results},null,2));
 console.log(`PASS ${assertions} integration assertions`);
 
 
