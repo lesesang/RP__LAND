@@ -1,0 +1,23 @@
+[
+  {
+    "name": "초기화 키 제거 후 초기화 거부",
+    "pass": true,
+    "expected": 403,
+    "actual": 403,
+    "detail": null
+  },
+  {
+    "name": "최종 8명 활성 및 역할 구성",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "재배포 후 관리자 로그인 유지 및 초기 설정 종료",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  }
+]
