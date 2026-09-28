@@ -25,10 +25,10 @@ try{
   const results=[]; let section='';
   function sec(s){section=s;}
   function check(v,name,detail){results.push({section,name,pass:!!v,detail});}
-  function client(){
+  function client(visitor){
     const cookies={};
     const fn=async(path,method='GET',data,rawBody)=>{
-      const headers={'Content-Type':'application/json',Cookie:Object.entries(cookies).map(([k,v])=>`${k}=${v}`).join('; ')};
+      const headers={'Content-Type':'application/json',...(visitor?{'oai-authenticated-user-id':visitor}:{}),Cookie:Object.entries(cookies).map(([k,v])=>`${k}=${v}`).join('; ')};
       const body=rawBody!==undefined?rawBody:(data!==undefined?JSON.stringify(data):undefined);
       const r=await fetch(base+'/api/'+path,{method,headers,body});
       for(const c of (r.headers.getSetCookie?.()||[])){const[k,...v]=c.split(';')[0].split('=');cookies[k]=v.join('=');}
@@ -168,12 +168,14 @@ try{
     if(r.status===429){secretHitLimit=true;break;}
   }
   check(secretHitLimit&&secretAttempts<=21,'비밀글 비밀번호 무차별 대입도 20회 근처에서 429로 차단됨',{secretAttempts,secretHitLimit});
-  let regCount=0;
+  let regCount=0,limitedCount=0;
+  const flood=client('qa-flood-visitor');
   for(let i=0;i<15;i++){
-    const r=await client()('register','POST',{username:'flood_'+suffix+'_'+i,password:'Flood-Password!1'});
+    const r=await flood('register','POST',{username:'flood_'+suffix+'_'+i,password:'Flood-Password!1'});
     if(r.status===200)regCount++;
+    if(r.status===429)limitedCount++;
   }
-  check(regCount===15,'[알려진 한계 재확인] 서로 다른 아이디로 대량 가입 시 애플리케이션 단에서는 속도 제한이 걸리지 않음(계정당 제한만 존재)',regCount);
+  check(regCount===10&&limitedCount===5,'동일 방문자는 서로 다른 아이디로 가입해도 10회 이후 제한됨',{regCount,limitedCount});
 
   // ---- F. 위험한 서식/마크업 렌더 안전성(정적 검증) -----------------------------
   sec('F. 위험한 서식·문자 입력');
@@ -183,7 +185,7 @@ try{
   check(xssReadBack.data?.content==='<img src=x onerror="alert(1)">','저장은 원문 그대로, 렌더링 시 무해화는 클라이언트 컴포넌트 책임(react-markdown skipHtml, 별도 렌더 테스트로 검증됨)',xssReadBack.data?.content);
   const rtlOverride='\u202E공격자\u202C';
   const characterRtl=await attacker('entries/practice/comments','POST',{content:'표시 이름 테스트',character:rtlOverride});
-  check(characterRtl.status===200,'[관찰] 캐릭터명 필드는 아이디와 달리 문자 종류 제한이 없어 방향 제어 문자(RTL override) 등도 그대로 저장됨',characterRtl);
+  check(characterRtl.status===400,'캐릭터명 방향 제어 문자 거부',characterRtl);
 
   // ---- G. 점검/초기화 엔드포인트 보호 -----------------------------------------
   sec('G. 위험한 관리 엔드포인트 보호');
@@ -218,6 +220,36 @@ try{
   const bogusCategoryFilter=await guest('entries?category='+encodeURIComponent("' OR '1'='1"));
   check(bogusCategoryFilter.status===200,'검색/카테고리 필터 파라미터에 SQLi 문자열을 넣어도 정상 200 응답(그냥 결과 0건)',bogusCategoryFilter.data);
   check((bogusCategoryFilter.data?.entries||[]).length>=0,'필터 파라미터 인젝션 시도로 전체 목록이 새지 않음',bogusCategoryFilter.data?.total);
+
+  sec('I. 추가 개선 회귀');
+  const caseClient=client('qa-case-visitor');
+  const caseName='Case_'+suffix;
+  check((await caseClient('register','POST',{username:caseName,password:'Case-Password!1'})).status===200,'대소문자 포함 아이디 가입');
+  check((await caseClient('register','POST',{username:caseName.toLowerCase(),password:'Other-Password!1'})).status===409,'대소문자만 다른 중복 아이디 거부');
+  check((await caseClient('login','POST',{username:caseName.toUpperCase(),password:'Case-Password!1'})).status===200,'충돌 없는 기존 계정은 대소문자 달라도 로그인');
+  check((await caseClient('me')).data.user.username===caseName,'아이디 원래 표시 보존');
+  const race=client('qa-race-visitor'), raceName='Race_'+suffix;
+  const raceResults=await Promise.all([raceName,raceName.toLowerCase()].map(username=>race('register','POST',{username,password:'Race-Password!1'})));
+  check(raceResults.map(r=>r.status).sort().join(',')==='200,409','대소문자 중복 동시 가입도 하나만 성공');
+  let limitCase=false;
+  for(let i=0;i<22;i++){const r=await caseClient('login','POST',{username:i%2?caseName.toUpperCase():caseName.toLowerCase(),password:'wrong'});if(r.status===429){limitCase=true;break}}
+  check(limitCase,'로그인 제한은 대소문자를 바꿔도 공유');
+  for(const character of ['a\u200bb','a\u200db','a\u2066b','a\ufeffb','a\u0000b','\u200d']){
+    check((await attacker('entries/practice/comments','POST',{character,content:'검증'})).status===400,'숨은 문자 캐릭터명 거부: '+JSON.stringify(character));
+  }
+  check((await attacker('entries/practice/comments','POST',{character:'★ 영웅 👩‍🚀',content:'장식 유지'})).status===200,'장식과 ZWJ 이모지 캐릭터명 허용');
+  const editThread=await attacker('entries','POST',{title:'입력검사',content:'원문'});
+  check((await attacker('entries/'+editThread.data.id,'PATCH',{title:'수정',content:'내용',categories:[{}]})).status===400,'문서 수정의 객체 카테고리 거부');
+  check((await attacker('entries/'+editThread.data.id)).data.content==='원문','잘못된 수정 후 원문 보존');
+  const legacySql="INSERT INTO users(id,username,password,role,active,created) SELECT 'legacy-upper','LegacyCase',password,'USER',1,created FROM users WHERE id='"+victimId+"'; INSERT INTO users(id,username,password,role,active,created) SELECT 'legacy-lower','legacycase',password,'USER',1,created FROM users WHERE id='"+victimId+"';";
+  const seeded=spawnSync(process.execPath,['--import','./scripts/sites-env.mjs','./node_modules/wrangler/bin/wrangler.js','d1','execute','DB','--local','--config','dist/server/wrangler.json','--persist-to',dbPath,'--command',legacySql],{encoding:'utf8'});
+  if(seeded.status)throw new Error(seeded.stderr+seeded.stdout);
+  const legacy=client();
+  check((await legacy('login','POST',{username:'LegacyCase',password:'Victim-Password!1'})).status===200,'기존 대소문자 충돌 계정 정확한 표기 로그인');
+  check((await legacy('me')).data.user.id==='legacy-upper','기존 계정 정체성 보존');
+  check((await client()('login','POST',{username:'LEGACYCASE',password:'Victim-Password!1'})).status===401,'충돌 계정의 모호한 대소문자 로그인 거부');
+  const limited=await fetch(base+'/api/register',{method:'POST',headers:{'Content-Type':'application/json','oai-authenticated-user-id':'qa-flood-visitor'},body:JSON.stringify({username:'retry_'+suffix,password:'Retry-Password!1'})});
+  check(limited.status===429&&Number(limited.headers.get('Retry-After'))>0,'가입 제한에 재시도 대기 시간 반환');
 
   server.kill('SIGTERM');
 
