@@ -275,7 +275,37 @@ try{
   check(badMeta.status===400,'non-boolean schedule visibility options should be rejected',badMeta);
   const badFlags=await victim('entries','POST',{title:'badflags',content:'x',isSecret:'false',secretPw:'pass1234'});
   check(badFlags.status===400,'string false must not silently create a secret thread',badFlags);
-  server.kill('SIGTERM');
+  sec('L. 3차 수정 회귀 검증');
+  for(const endpoint of ['entries','schedule']){
+    for(const value of ['0','-1','1.5','abc','1000001','9007199254740991']){
+      const r=await guest(endpoint+'?page='+value);check(r.status===400,endpoint+' invalid page '+value+' returns 400',r);
+    }
+    for(const value of ['1','2','1000000']){
+      const r=await guest(endpoint+'?page='+value);check(r.status===200&&r.data.page===Number(value),endpoint+' valid page '+value,r);
+    }
+  }
+  const scheduledPayload={title:'예약 검증',content:'unchanged',scheduledAt:new Date(Date.now()+86400000).toISOString(),scheduleListed:true,previewOpen:false,scheduleMeta:{title:false,author:false,categories:false}};
+  const scheduledDoc=await victim('entries','POST',scheduledPayload);
+  check(scheduledDoc.status===200,'valid false visibility fields accepted',scheduledDoc);
+  const publicSchedule=await guest('schedule');
+  const listed=publicSchedule.data.entries.find(x=>x.id===scheduledDoc.data.id);
+  check(listed?.title==='예약 스레드'&&listed?.author===null&&listed?.categories==='[]','false visibility fields remain private',listed);
+  for(const key of ['scheduleListed','previewOpen','isSecret']){
+    const r=await victim('entries','POST',{title:'x',content:'x',[key]:'false'});check(r.status===400,key+' string false rejected even without scheduling',r);
+  }
+  for(const value of [null,[],1,'false']){
+    const r=await victim('entries','POST',{...scheduledPayload,scheduleMeta:value});check(r.status===400,'invalid metadata container '+JSON.stringify(value),r);
+  }
+  for(const patch of [{scheduledAt:{toString:null,valueOf:null}},{scheduleMeta:{title:1}},{scheduleListed:'false'},{previewOpen:0}]){
+    const r=await victim('entries/'+scheduledDoc.data.id,'PATCH',{...scheduledPayload,...patch,title:'should not save'});check(r.status===400,'scheduled edit validation '+JSON.stringify(patch),r);
+  }
+  check((await victim('entries/'+scheduledDoc.data.id)).data.title===scheduledPayload.title,'failed schedule edits preserve original');
+  const spacedSecret='  secret-spaces  ';
+  const secretDoc=await victim('entries','POST',{title:'비밀번호 보존',content:'secret',isSecret:true,secretPw:spacedSecret});
+  check(secretDoc.status===200,'spaced secret password accepted',secretDoc);
+  check((await guest('entries/'+secretDoc.data.id+'/unlock','POST',{password:spacedSecret.trim()})).status===401,'trimmed secret password rejected');
+  check((await guest('entries/'+secretDoc.data.id+'/unlock','POST',{password:spacedSecret})).status===200,'exact secret password accepted');
+  check((await pwClient('me','DELETE',{password:spaced})).status===200,'exact spaced account password also works for withdrawal');
 
   const pass=results.filter(r=>r.pass).length, fail=results.length-pass;
   console.log('\n=== 악의적 시나리오 QA 결과 요약 ===');
