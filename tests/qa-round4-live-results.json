@@ -1,0 +1,1131 @@
+[
+  {
+    "name": "문서 생성: QA 악의적 입력 검사",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "rp_admin 역할 확인",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "rp_admin 연습장 주사위 작성",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "rp_admin 본인 연습장 주사위 수정",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "rp_admin 본인 연습장 삭제",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "rp_admin 타인 문서 수정 권한",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "rp_user01 역할 확인",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "rp_user01 연습장 주사위 작성",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "rp_user01 본인 연습장 주사위 수정",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "rp_user01 본인 연습장 삭제",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "rp_user01 타인 문서 수정 권한",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "rp_user02 역할 확인",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "rp_user02 연습장 주사위 작성",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "rp_user02 본인 연습장 주사위 수정",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "rp_user02 본인 연습장 삭제",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "rp_user02 타인 문서 수정 권한",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "rp_user03 역할 확인",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "rp_user03 연습장 주사위 작성",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "rp_user03 본인 연습장 주사위 수정",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "rp_user03 본인 연습장 삭제",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "rp_user03 타인 문서 수정 권한",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "rp_user04 역할 확인",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "rp_user04 연습장 주사위 작성",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "rp_user04 본인 연습장 주사위 수정",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "rp_user04 본인 연습장 삭제",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "rp_user04 타인 문서 수정 권한",
+    "pass": true,
+    "expected": 403,
+    "actual": 403,
+    "detail": null
+  },
+  {
+    "name": "rp_user05 역할 확인",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "rp_user05 연습장 주사위 작성",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "rp_user05 본인 연습장 주사위 수정",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "rp_user05 본인 연습장 삭제",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "rp_user05 타인 문서 수정 권한",
+    "pass": true,
+    "expected": 403,
+    "actual": 403,
+    "detail": null
+  },
+  {
+    "name": "rp_user06 역할 확인",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "rp_user06 연습장 주사위 작성",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "rp_user06 본인 연습장 주사위 수정",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "rp_user06 본인 연습장 삭제",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "rp_user06 타인 문서 수정 권한",
+    "pass": true,
+    "expected": 403,
+    "actual": 403,
+    "detail": null
+  },
+  {
+    "name": "rp_user07 역할 확인",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "rp_user07 연습장 주사위 작성",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "rp_user07 본인 연습장 주사위 수정",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "rp_user07 본인 연습장 삭제",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "rp_user07 타인 문서 수정 권한",
+    "pass": true,
+    "expected": 403,
+    "actual": 403,
+    "detail": null
+  },
+  {
+    "name": "비로그인 회원 관리 권한 PATCH",
+    "pass": true,
+    "expected": 401,
+    "actual": 401,
+    "detail": null
+  },
+  {
+    "name": "비로그인 회원 관리 권한 DELETE",
+    "pass": true,
+    "expected": 401,
+    "actual": 401,
+    "detail": null
+  },
+  {
+    "name": "일반회원 회원 관리 권한 PATCH",
+    "pass": true,
+    "expected": 403,
+    "actual": 403,
+    "detail": null
+  },
+  {
+    "name": "일반회원 회원 관리 권한 DELETE",
+    "pass": true,
+    "expected": 403,
+    "actual": 403,
+    "detail": null
+  },
+  {
+    "name": "부관리자 회원 관리 권한 PATCH",
+    "pass": true,
+    "expected": 403,
+    "actual": 403,
+    "detail": null
+  },
+  {
+    "name": "부관리자 회원 관리 권한 DELETE",
+    "pass": true,
+    "expected": 403,
+    "actual": 403,
+    "detail": null
+  },
+  {
+    "name": "총관리자 자기 강등 차단",
+    "pass": true,
+    "expected": 400,
+    "actual": 400,
+    "detail": null
+  },
+  {
+    "name": "총관리자 자기 탈퇴 차단",
+    "pass": true,
+    "expected": 400,
+    "actual": 400,
+    "detail": null
+  },
+  {
+    "name": "편집 권한 부여",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "공동 편집자 수정",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "공동 편집자 권한 재공유 차단",
+    "pass": true,
+    "expected": 403,
+    "actual": 403,
+    "detail": null
+  },
+  {
+    "name": "권한 회수",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "회수 즉시 수정 차단",
+    "pass": true,
+    "expected": 403,
+    "actual": 403,
+    "detail": null
+  },
+  {
+    "name": "문서 생성: QA 비밀글",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "비로그인 비밀번호 없는 비밀글 차단",
+    "pass": true,
+    "expected": 403,
+    "actual": 403,
+    "detail": null
+  },
+  {
+    "name": "총관리자 비밀번호 없는 비밀글 차단",
+    "pass": true,
+    "expected": 403,
+    "actual": 403,
+    "detail": null
+  },
+  {
+    "name": "부관리자 비밀번호 없는 비밀글 차단",
+    "pass": true,
+    "expected": 403,
+    "actual": 403,
+    "detail": null
+  },
+  {
+    "name": "작성자 비밀번호 없는 비밀글 차단",
+    "pass": true,
+    "expected": 403,
+    "actual": 403,
+    "detail": null
+  },
+  {
+    "name": "일반회원 비밀글 열기",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "열람 권한으로 편집 불가",
+    "pass": true,
+    "expected": 403,
+    "actual": 403,
+    "detail": null
+  },
+  {
+    "name": "문서 생성: QA 비밀글2",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "다른 비밀글 토큰 재사용 차단",
+    "pass": true,
+    "expected": 403,
+    "actual": 403,
+    "detail": null
+  },
+  {
+    "name": "위조 로그인 쿠키 차단",
+    "pass": true,
+    "expected": 401,
+    "actual": 401,
+    "detail": null
+  },
+  {
+    "name": "일반 레스 본인 수정 차단",
+    "pass": true,
+    "expected": 403,
+    "actual": 403,
+    "detail": null
+  },
+  {
+    "name": "작성자 레스 가림",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "가린 본문과 주사위 제거",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "일반 작성자의 공개 스레드 삭제 차단",
+    "pass": true,
+    "expected": 403,
+    "actual": 403,
+    "detail": null
+  },
+  {
+    "name": "문서 생성: QA 예약 스레드",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "비노출 예약 외부 열람 차단",
+    "pass": true,
+    "expected": 404,
+    "actual": 404,
+    "detail": null
+  },
+  {
+    "name": "예약 중 작성자도 레스 등록 차단",
+    "pass": true,
+    "expected": 409,
+    "actual": 409,
+    "detail": null
+  },
+  {
+    "name": "예약 작성자 삭제 허용",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "문서 생성: QA 위키",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "위키에 레스 등록 차단",
+    "pass": true,
+    "expected": 400,
+    "actual": 400,
+    "detail": null
+  },
+  {
+    "name": "부관리자 위키 삭제",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "위키 삭제 후 조회 차단",
+    "pass": true,
+    "expected": 404,
+    "actual": 404,
+    "detail": null
+  },
+  {
+    "name": "가입 JSON null",
+    "pass": true,
+    "expected": 400,
+    "actual": 400,
+    "detail": null
+  },
+  {
+    "name": "가입 JSON []",
+    "pass": true,
+    "expected": 400,
+    "actual": 400,
+    "detail": null
+  },
+  {
+    "name": "가입 JSON true",
+    "pass": true,
+    "expected": 400,
+    "actual": 400,
+    "detail": null
+  },
+  {
+    "name": "가입 JSON 1",
+    "pass": true,
+    "expected": 400,
+    "actual": 400,
+    "detail": null
+  },
+  {
+    "name": "가입 JSON \"text\"",
+    "pass": true,
+    "expected": 400,
+    "actual": 400,
+    "detail": null
+  },
+  {
+    "name": "가입 JSON {",
+    "pass": true,
+    "expected": 400,
+    "actual": 400,
+    "detail": null
+  },
+  {
+    "name": "수정 카테고리 타입 [{}]",
+    "pass": true,
+    "expected": 400,
+    "actual": 400,
+    "detail": null
+  },
+  {
+    "name": "수정 카테고리 타입 [[]]",
+    "pass": true,
+    "expected": 400,
+    "actual": 400,
+    "detail": null
+  },
+  {
+    "name": "수정 카테고리 타입 [None]",
+    "pass": true,
+    "expected": 400,
+    "actual": 400,
+    "detail": null
+  },
+  {
+    "name": "수정 카테고리 타입 [1]",
+    "pass": true,
+    "expected": 400,
+    "actual": 400,
+    "detail": null
+  },
+  {
+    "name": "공유 대상 타입 {}",
+    "pass": true,
+    "expected": 400,
+    "actual": 400,
+    "detail": null
+  },
+  {
+    "name": "공유 대상 타입 []",
+    "pass": true,
+    "expected": 400,
+    "actual": 400,
+    "detail": null
+  },
+  {
+    "name": "공유 대상 타입 None",
+    "pass": true,
+    "expected": 400,
+    "actual": 400,
+    "detail": null
+  },
+  {
+    "name": "공유 대상 타입 1",
+    "pass": true,
+    "expected": 400,
+    "actual": 400,
+    "detail": null
+  },
+  {
+    "name": "페이지 입력 entries?page=1.5",
+    "pass": true,
+    "expected": 400,
+    "actual": 400,
+    "detail": null
+  },
+  {
+    "name": "페이지 입력 entries?page=Infinity",
+    "pass": true,
+    "expected": 400,
+    "actual": 400,
+    "detail": null
+  },
+  {
+    "name": "페이지 입력 entries?page=abc",
+    "pass": true,
+    "expected": 400,
+    "actual": 400,
+    "detail": null
+  },
+  {
+    "name": "페이지 입력 schedule?page=Infinity",
+    "pass": true,
+    "expected": 400,
+    "actual": 400,
+    "detail": null
+  },
+  {
+    "name": "카테고리 경로 누락",
+    "pass": true,
+    "expected": [
+      400,
+      404,
+      405
+    ],
+    "actual": 400,
+    "detail": null
+  },
+  {
+    "name": "잘못된 예약 객체",
+    "pass": true,
+    "expected": 400,
+    "actual": 400,
+    "detail": null
+  },
+  {
+    "name": "잘못된 예약 표시 자료형",
+    "pass": true,
+    "expected": 400,
+    "actual": 400,
+    "detail": null
+  },
+  {
+    "name": "문자열 false 비밀 설정",
+    "pass": true,
+    "expected": 400,
+    "actual": 400,
+    "detail": null
+  },
+  {
+    "name": "교차 출처 쓰기",
+    "pass": true,
+    "expected": 403,
+    "actual": 403,
+    "detail": null
+  },
+  {
+    "name": "text/plain 쓰기",
+    "pass": true,
+    "expected": 415,
+    "actual": 415,
+    "detail": null
+  },
+  {
+    "name": "본문 초과 제한",
+    "pass": true,
+    "expected": 413,
+    "actual": 413,
+    "detail": null
+  },
+  {
+    "name": "이름 제어문자 'a\\u200bb'",
+    "pass": true,
+    "expected": 400,
+    "actual": 400,
+    "detail": null
+  },
+  {
+    "name": "이름 제어문자 'a\\u202eb'",
+    "pass": true,
+    "expected": 400,
+    "actual": 400,
+    "detail": null
+  },
+  {
+    "name": "이름 제어문자 'a\\u200db'",
+    "pass": true,
+    "expected": 400,
+    "actual": 400,
+    "detail": null
+  },
+  {
+    "name": "이름 제어문자 'ㅤ'",
+    "pass": true,
+    "expected": 400,
+    "actual": 400,
+    "detail": null
+  },
+  {
+    "name": "결합 이모지 허용",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "잘못된 주사위 [dice:0d6]",
+    "pass": true,
+    "expected": 400,
+    "actual": 400,
+    "detail": null
+  },
+  {
+    "name": "잘못된 주사위 [dice:101d6]",
+    "pass": true,
+    "expected": 400,
+    "actual": 400,
+    "detail": null
+  },
+  {
+    "name": "잘못된 주사위 [dice:1x0..100000001]",
+    "pass": true,
+    "expected": 400,
+    "actual": 400,
+    "detail": null
+  },
+  {
+    "name": "잘못된 주사위 [dice:3x0..1!]",
+    "pass": true,
+    "expected": 400,
+    "actual": 400,
+    "detail": null
+  },
+  {
+    "name": "잘못된 주사위 [dice:1x0..1+100000001]",
+    "pass": true,
+    "expected": 400,
+    "actual": 400,
+    "detail": null
+  },
+  {
+    "name": "최대 경계 주사위",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "위조 결과 무시",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "주사위 작성자 및 결과 서버 결정",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "동시 등록 ID 충돌 없음",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "동시 삭제는 성공 또는 이미 없음",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "SQL 삽입 문자열 검색",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "위조 플랫폼 헤더 중복 가입 0",
+    "pass": true,
+    "expected": [
+      409,
+      429
+    ],
+    "actual": 409,
+    "detail": null
+  },
+  {
+    "name": "위조 플랫폼 헤더 중복 가입 1",
+    "pass": true,
+    "expected": [
+      409,
+      429
+    ],
+    "actual": 409,
+    "detail": null
+  },
+  {
+    "name": "위조 플랫폼 헤더 중복 가입 2",
+    "pass": true,
+    "expected": [
+      409,
+      429
+    ],
+    "actual": 429,
+    "detail": null
+  },
+  {
+    "name": "위조 플랫폼 헤더 중복 가입 3",
+    "pass": true,
+    "expected": [
+      409,
+      429
+    ],
+    "actual": 429,
+    "detail": null
+  },
+  {
+    "name": "위조 플랫폼 헤더 중복 가입 4",
+    "pass": true,
+    "expected": [
+      409,
+      429
+    ],
+    "actual": 429,
+    "detail": null
+  },
+  {
+    "name": "위조 플랫폼 헤더 중복 가입 5",
+    "pass": true,
+    "expected": [
+      409,
+      429
+    ],
+    "actual": 429,
+    "detail": null
+  },
+  {
+    "name": "위조 플랫폼 헤더 중복 가입 6",
+    "pass": true,
+    "expected": [
+      409,
+      429
+    ],
+    "actual": 429,
+    "detail": null
+  },
+  {
+    "name": "위조 플랫폼 헤더 중복 가입 7",
+    "pass": true,
+    "expected": [
+      409,
+      429
+    ],
+    "actual": 429,
+    "detail": null
+  },
+  {
+    "name": "위조 플랫폼 헤더 중복 가입 8",
+    "pass": true,
+    "expected": [
+      409,
+      429
+    ],
+    "actual": 429,
+    "detail": null
+  },
+  {
+    "name": "위조 플랫폼 헤더 중복 가입 9",
+    "pass": true,
+    "expected": [
+      409,
+      429
+    ],
+    "actual": 429,
+    "detail": null
+  },
+  {
+    "name": "위조 플랫폼 헤더 중복 가입 10",
+    "pass": true,
+    "expected": [
+      409,
+      429
+    ],
+    "actual": 429,
+    "detail": null
+  },
+  {
+    "name": "위조 플랫폼 헤더 중복 가입 11",
+    "pass": true,
+    "expected": [
+      409,
+      429
+    ],
+    "actual": 429,
+    "detail": null
+  },
+  {
+    "name": "헤더를 바꿔도 가입 제한 작동",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "대상 ID 누락 PATCH entries",
+    "pass": false,
+    "expected": [
+      400,
+      404,
+      405
+    ],
+    "actual": 503,
+    "detail": {
+      "error": "일시적으로 처리할 수 없습니다. 잠시 후 다시 시도해 주세요."
+    }
+  },
+  {
+    "name": "대상 ID 누락 DELETE entries",
+    "pass": false,
+    "expected": [
+      400,
+      404,
+      405
+    ],
+    "actual": 503,
+    "detail": {
+      "error": "일시적으로 처리할 수 없습니다. 잠시 후 다시 시도해 주세요."
+    }
+  },
+  {
+    "name": "대상 ID 누락 PATCH entries/practice/comments",
+    "pass": false,
+    "expected": [
+      400,
+      404,
+      405
+    ],
+    "actual": 503,
+    "detail": {
+      "error": "일시적으로 처리할 수 없습니다. 잠시 후 다시 시도해 주세요."
+    }
+  },
+  {
+    "name": "대상 ID 누락 DELETE entries/practice/comments",
+    "pass": false,
+    "expected": [
+      400,
+      404,
+      405
+    ],
+    "actual": 503,
+    "detail": {
+      "error": "일시적으로 처리할 수 없습니다. 잠시 후 다시 시도해 주세요."
+    }
+  },
+  {
+    "name": "비밀번호 객체 입력 login",
+    "pass": false,
+    "expected": [
+      400,
+      401
+    ],
+    "actual": 503,
+    "detail": {
+      "error": "일시적으로 처리할 수 없습니다. 잠시 후 다시 시도해 주세요."
+    }
+  },
+  {
+    "name": "비밀번호 객체 입력 me",
+    "pass": false,
+    "expected": [
+      400,
+      401
+    ],
+    "actual": 503,
+    "detail": {
+      "error": "일시적으로 처리할 수 없습니다. 잠시 후 다시 시도해 주세요."
+    }
+  },
+  {
+    "name": "비밀번호 객체 입력 entries/a4f2a8fd-4146-4ee0-858d-5a5e4c4ca997/unlock",
+    "pass": false,
+    "expected": [
+      400,
+      401
+    ],
+    "actual": 503,
+    "detail": {
+      "error": "일시적으로 처리할 수 없습니다. 잠시 후 다시 시도해 주세요."
+    }
+  },
+  {
+    "name": "잘못된 탈퇴 요청 후 계정 유지",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "교차 문서 검사용 연습장 레스",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "타인 연습장 수정 차단",
+    "pass": true,
+    "expected": 403,
+    "actual": 403,
+    "detail": null
+  },
+  {
+    "name": "타인 연습장 삭제 차단",
+    "pass": true,
+    "expected": 403,
+    "actual": 403,
+    "detail": null
+  },
+  {
+    "name": "다른 문서에 연습장 레스 ID 대입",
+    "pass": true,
+    "expected": 404,
+    "actual": 404,
+    "detail": null
+  },
+  {
+    "name": "교차 요청 후 본문 보존",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "교차 검증 레스 정리",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "문서 생성: QA 공백 비밀글",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "공백 뺀 비밀글 비밀번호 거부",
+    "pass": true,
+    "expected": 401,
+    "actual": 401,
+    "detail": null
+  },
+  {
+    "name": "공백 포함 비밀글 비밀번호 일치",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "공백 비밀번호 검증 문서 정리",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "역할 구성 유지",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "테스트 후 총관리자 세션 정상",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  }
+]

@@ -1,0 +1,211 @@
+
+=== 악의적 시나리오 QA 결과 요약 ===
+총 점검 166건 · 통과 159건 · 실패 7건
+
+[A. 인증·권한 우회 시도] 9/9
+
+[B. SQL 인젝션 시도] 14/14
+
+[C. 기형 요청으로 서버 크래시 유도 시도] 12/12
+
+[D. 비밀글 접근 그랜트 위조/재사용 시도] 4/4
+
+[E. 무차별 대입 및 속도 제한] 3/3
+
+[F. 위험한 서식·문자 입력] 3/3
+
+[G. 위험한 관리 엔드포인트 보호] 4/4
+
+[H. 업무 로직 악용 시도] 7/7
+
+[I. 추가 개선 회귀] 19/19
+
+[J. 3차 입력 조합과 자격 증명 검사] 33/33
+
+[K. 경계값/요청 조합] 8/8
+
+[L. 3차 수정 회귀 검증] 36/36
+
+[M. 4차 누락 경로와 인증 입력] 7/14
+  ✗ FAIL: missing target PATCH entries
+     detail: {"status":503,"data":{"error":"일시적으로 처리할 수 없습니다. 잠시 후 다시 시도해 주세요."}}
+  ✗ FAIL: missing target DELETE entries
+     detail: {"status":503,"data":{"error":"일시적으로 처리할 수 없습니다. 잠시 후 다시 시도해 주세요."}}
+  ✗ FAIL: missing target PATCH entries/practice/comments
+     detail: {"status":503,"data":{"error":"일시적으로 처리할 수 없습니다. 잠시 후 다시 시도해 주세요."}}
+  ✗ FAIL: missing target DELETE entries/practice/comments
+     detail: {"status":503,"data":{"error":"일시적으로 처리할 수 없습니다. 잠시 후 다시 시도해 주세요."}}
+  ✗ FAIL: malformed credential login
+     detail: {"status":503,"data":{"error":"일시적으로 처리할 수 없습니다. 잠시 후 다시 시도해 주세요."}}
+  ✗ FAIL: malformed credential me
+     detail: {"status":503,"data":{"error":"일시적으로 처리할 수 없습니다. 잠시 후 다시 시도해 주세요."}}
+  ✗ FAIL: malformed credential entries/3846783a-121f-4f76-9de3-1f0d2288290d/unlock
+     detail: {"status":503,"data":{"error":"일시적으로 처리할 수 없습니다. 잠시 후 다시 시도해 주세요."}}
+
+=== 전체 항목(참고) ===
+PASS | A. 인증·권한 우회 시도 | 위조된 세션 쿠키로는 로그인 상태를 얻을 수 없음
+PASS | A. 인증·권한 우회 시도 | 비로그인 상태로 관리자 API 접근 시 401
+PASS | A. 인증·권한 우회 시도 | 일반회원이 타인을 부관리자로 임명 시도 → 거부
+PASS | A. 인증·권한 우회 시도 | 가입 자체는 허용
+PASS | A. 인증·권한 우회 시도 | 회원가입 요청에 role:"SUPER"를 끼워 넣어도 무시되고 일반회원으로 생성됨
+PASS | A. 인증·권한 우회 시도 | 요청 본문에 role/author_id를 끼워 넣어도 무시되고 정상 처리(자기 자신으로 기록)
+PASS | A. 인증·권한 우회 시도 | 댓글 작성 후에도 attacker 역할은 그대로 일반회원
+PASS | A. 인증·권한 우회 시도 | 자기 자신 ID를 대문자로 바꿔 자기-보호 검사 우회 시도 → 차단 또는 대상없음으로 안전 처리
+PASS | A. 인증·권한 우회 시도 | 대소문자 우회 시도 이후에도 super1 권한은 그대로 총관리자 유지
+PASS | B. SQL 인젝션 시도 | SQLi 페이로드가 포함된 본문도 그냥 일반 텍스트로 저장 성공: '; DROP TABLE users; --
+PASS | B. SQL 인젝션 시도 | 저장된 내용이 페이로드 그대로(이스케이프 없이 원문) 보존됨 → 실행되지 않고 데이터로만 취급
+PASS | B. SQL 인젝션 시도 | SQLi 페이로드가 포함된 본문도 그냥 일반 텍스트로 저장 성공: ' OR '1'='1
+PASS | B. SQL 인젝션 시도 | 저장된 내용이 페이로드 그대로(이스케이프 없이 원문) 보존됨 → 실행되지 않고 데이터로만 취급
+PASS | B. SQL 인젝션 시도 | SQLi 페이로드가 포함된 본문도 그냥 일반 텍스트로 저장 성공: 1' UNION SELECT username,
+PASS | B. SQL 인젝션 시도 | 저장된 내용이 페이로드 그대로(이스케이프 없이 원문) 보존됨 → 실행되지 않고 데이터로만 취급
+PASS | B. SQL 인젝션 시도 | SQLi 페이로드가 포함된 본문도 그냥 일반 텍스트로 저장 성공: " OR 1=1 --
+PASS | B. SQL 인젝션 시도 | 저장된 내용이 페이로드 그대로(이스케이프 없이 원문) 보존됨 → 실행되지 않고 데이터로만 취급
+PASS | B. SQL 인젝션 시도 | SQLi 페이로드가 포함된 본문도 그냥 일반 텍스트로 저장 성공: '; UPDATE users SET role=
+PASS | B. SQL 인젝션 시도 | 저장된 내용이 페이로드 그대로(이스케이프 없이 원문) 보존됨 → 실행되지 않고 데이터로만 취급
+PASS | B. SQL 인젝션 시도 | SQL 인젝션 시도 이후에도 users 테이블/서비스 정상 동작
+PASS | B. SQL 인젝션 시도 | 인젝션 시도 이후에도 victim 역할이 변조되지 않음(UPDATE 인젝션 미실행)
+PASS | B. SQL 인젝션 시도 | 카테고리 이름에 SQLi 페이로드를 넣어도 안전하게 저장
+PASS | B. SQL 인젝션 시도 | 카테고리 인젝션 시도 이후에도 카테고리 API 정상 동작
+PASS | C. 기형 요청으로 서버 크래시 유도 시도 | JSON 리터럴 null을 본문으로 보내면 500/503이 아니라 4xx(인증 필요 포함)로 안전하게 거부되어야 함
+PASS | C. 기형 요청으로 서버 크래시 유도 시도 | [인증이 필요 없는 엔드포인트] JSON 리터럴 null 본문 전송 시 400으로 안전 처리되어야 함
+PASS | C. 기형 요청으로 서버 크래시 유도 시도 | JSON 배열을 본문으로 보내도 서버가 죽지 않고 4xx로 처리
+PASS | C. 기형 요청으로 서버 크래시 유도 시도 | 4만 단계로 깊게 중첩된 JSON을 보내도 4xx로 안전하게 처리(500/503 아님)
+PASS | C. 기형 요청으로 서버 크래시 유도 시도 | 카테고리 배열에 숫자를 넣어도 4xx로 안전하게 거부(서버 예외 아님)
+PASS | C. 기형 요청으로 서버 크래시 유도 시도 | 카테고리 배열에 객체를 넣어도 4xx로 안전하게 거부(서버 예외 아님)
+PASS | C. 기형 요청으로 서버 크래시 유도 시도 | 카테고리 배열에 중첩 배열을 넣어도 4xx로 안전하게 거부
+PASS | C. 기형 요청으로 서버 크래시 유도 시도 | editors 공유 API에 userId로 객체를 넣어도 4xx로 안전하게 거부
+PASS | C. 기형 요청으로 서버 크래시 유도 시도 | editors 공유 API에 userId로 배열을 넣어도 4xx로 안전하게 거부
+PASS | C. 기형 요청으로 서버 크래시 유도 시도 | editors 회수(DELETE) API에 userId로 배열을 넣어도 4xx로 안전하게 거부
+PASS | C. 기형 요청으로 서버 크래시 유도 시도 | __proto__/constructor 키를 끼워 넣어도 정상 처리되고 오염 없음
+PASS | C. 기형 요청으로 서버 크래시 유도 시도 | 전역 Object.prototype이 오염되지 않았음(다른 객체에 영향 없음)
+PASS | D. 비밀글 접근 그랜트 위조/재사용 시도 | A의 그랜트 토큰을 B의 쿠키 이름으로 재사용해도 B는 여전히 잠김
+PASS | D. 비밀글 접근 그랜트 위조/재사용 시도 | 그랜트 쿠키가 전혀 없으면 당연히 잠김
+PASS | D. 비밀글 접근 그랜트 위조/재사용 시도 | 총관리자도 비밀번호 없이는 비밀글 우회 불가
+PASS | D. 비밀글 접근 그랜트 위조/재사용 시도 | 작성자/관리자가 아니면 문서의 편집자 목록도 조회 불가(정보 노출 방지)
+PASS | E. 무차별 대입 및 속도 제한 | 특정 계정 로그인 무차별 대입 시 20회 근처에서 429로 차단됨
+PASS | E. 무차별 대입 및 속도 제한 | 비밀글 비밀번호 무차별 대입도 20회 근처에서 429로 차단됨
+PASS | E. 무차별 대입 및 속도 제한 | 동일 방문자는 서로 다른 아이디로 가입해도 10회 이후 제한됨
+PASS | F. 위험한 서식·문자 입력 | HTML/스크립트가 포함된 본문도 저장은 되지만
+PASS | F. 위험한 서식·문자 입력 | 저장은 원문 그대로, 렌더링 시 무해화는 클라이언트 컴포넌트 책임(react-markdown skipHtml, 별도 렌더 테스트로 검증됨)
+PASS | F. 위험한 서식·문자 입력 | 캐릭터명 방향 제어 문자 거부
+PASS | G. 위험한 관리 엔드포인트 보호 | 인증 헤더 없이 전체 초기화 시도 → 거부
+PASS | G. 위험한 관리 엔드포인트 보호 | 잘못된 토큰으로 전체 초기화 시도 → 거부
+PASS | G. 위험한 관리 엔드포인트 보호 | 올바른 토큰이어도 확인 문구가 틀리면 거부(이중 안전장치)
+PASS | G. 위험한 관리 엔드포인트 보호 | 초기화 시도들이 모두 막혀 기존 데이터가 그대로 남아있음
+PASS | H. 업무 로직 악용 시도 | 음수 개수 주사위 요청 거부
+PASS | H. 업무 로직 악용 시도 | 0개 주사위 요청 거부
+PASS | H. 업무 로직 악용 시도 | 1억을 초과하는 매우 큰 주사위 범위 거부
+PASS | H. 업무 로직 악용 시도 | 동시 강제 탈퇴 요청 중 최소 하나는 성공
+PASS | H. 업무 로직 악용 시도 | 동시 강제 탈퇴 요청의 나머지는 성공 또는 대상없음(404)으로 일관 처리, 예외 없음
+PASS | H. 업무 로직 악용 시도 | 검색/카테고리 필터 파라미터에 SQLi 문자열을 넣어도 정상 200 응답(그냥 결과 0건)
+PASS | H. 업무 로직 악용 시도 | 필터 파라미터 인젝션 시도로 전체 목록이 새지 않음
+PASS | I. 추가 개선 회귀 | 대소문자 포함 아이디 가입
+PASS | I. 추가 개선 회귀 | 대소문자만 다른 중복 아이디 거부
+PASS | I. 추가 개선 회귀 | 충돌 없는 기존 계정은 대소문자 달라도 로그인
+PASS | I. 추가 개선 회귀 | 아이디 원래 표시 보존
+PASS | I. 추가 개선 회귀 | 대소문자 중복 동시 가입도 하나만 성공
+PASS | I. 추가 개선 회귀 | 로그인 제한은 대소문자를 바꿔도 공유
+PASS | I. 추가 개선 회귀 | 숨은 문자 캐릭터명 거부: "a​b"
+PASS | I. 추가 개선 회귀 | 숨은 문자 캐릭터명 거부: "a‍b"
+PASS | I. 추가 개선 회귀 | 숨은 문자 캐릭터명 거부: "a⁦b"
+PASS | I. 추가 개선 회귀 | 숨은 문자 캐릭터명 거부: "a﻿b"
+PASS | I. 추가 개선 회귀 | 숨은 문자 캐릭터명 거부: "a\u0000b"
+PASS | I. 추가 개선 회귀 | 숨은 문자 캐릭터명 거부: "‍"
+PASS | I. 추가 개선 회귀 | 장식과 ZWJ 이모지 캐릭터명 허용
+PASS | I. 추가 개선 회귀 | 문서 수정의 객체 카테고리 거부
+PASS | I. 추가 개선 회귀 | 잘못된 수정 후 원문 보존
+PASS | I. 추가 개선 회귀 | 기존 대소문자 충돌 계정 정확한 표기 로그인
+PASS | I. 추가 개선 회귀 | 기존 계정 정체성 보존
+PASS | I. 추가 개선 회귀 | 충돌 계정의 모호한 대소문자 로그인 거부
+PASS | I. 추가 개선 회귀 | 가입 제한에 재시도 대기 시간 반환
+PASS | J. 3차 입력 조합과 자격 증명 검사 | POST scheduledAt null must not cause server error
+PASS | J. 3차 입력 조합과 자격 증명 검사 | POST scheduledAt true must not cause server error
+PASS | J. 3차 입력 조합과 자격 증명 검사 | POST scheduledAt 1 must not cause server error
+PASS | J. 3차 입력 조합과 자격 증명 검사 | POST scheduledAt [] must not cause server error
+PASS | J. 3차 입력 조합과 자격 증명 검사 | POST scheduledAt {} must not cause server error
+PASS | J. 3차 입력 조합과 자격 증명 검사 | POST scheduledAt {"toString":null,"valueOf":null} must not cause server error
+PASS | J. 3차 입력 조합과 자격 증명 검사 | POST scheduleMeta null must not cause server error
+PASS | J. 3차 입력 조합과 자격 증명 검사 | POST scheduleMeta true must not cause server error
+PASS | J. 3차 입력 조합과 자격 증명 검사 | POST scheduleMeta 1 must not cause server error
+PASS | J. 3차 입력 조합과 자격 증명 검사 | POST scheduleMeta [] must not cause server error
+PASS | J. 3차 입력 조합과 자격 증명 검사 | POST scheduleMeta {} must not cause server error
+PASS | J. 3차 입력 조합과 자격 증명 검사 | POST scheduleMeta {"toString":null,"valueOf":null} must not cause server error
+PASS | J. 3차 입력 조합과 자격 증명 검사 | PATCH categories null must not cause server error
+PASS | J. 3차 입력 조합과 자격 증명 검사 | PATCH categories true must not cause server error
+PASS | J. 3차 입력 조합과 자격 증명 검사 | PATCH categories 1 must not cause server error
+PASS | J. 3차 입력 조합과 자격 증명 검사 | PATCH categories [] must not cause server error
+PASS | J. 3차 입력 조합과 자격 증명 검사 | PATCH categories {} must not cause server error
+PASS | J. 3차 입력 조합과 자격 증명 검사 | PATCH categories {"toString":null,"valueOf":null} must not cause server error
+PASS | J. 3차 입력 조합과 자격 증명 검사 | POST character null must not cause server error
+PASS | J. 3차 입력 조합과 자격 증명 검사 | POST character true must not cause server error
+PASS | J. 3차 입력 조합과 자격 증명 검사 | POST character 1 must not cause server error
+PASS | J. 3차 입력 조합과 자격 증명 검사 | POST character [] must not cause server error
+PASS | J. 3차 입력 조합과 자격 증명 검사 | POST character {} must not cause server error
+PASS | J. 3차 입력 조합과 자격 증명 검사 | POST character {"toString":null,"valueOf":null} must not cause server error
+PASS | J. 3차 입력 조합과 자격 증명 검사 | pagination entries?page=1.5 must not cause server error
+PASS | J. 3차 입력 조합과 자격 증명 검사 | pagination entries?page=Infinity must not cause server error
+PASS | J. 3차 입력 조합과 자격 증명 검사 | pagination entries?page=-Infinity must not cause server error
+PASS | J. 3차 입력 조합과 자격 증명 검사 | pagination schedule?page=Infinity must not cause server error
+PASS | J. 3차 입력 조합과 자격 증명 검사 | pagination schedule?page=1e100 must not cause server error
+PASS | J. 3차 입력 조합과 자격 증명 검사 | category PATCH without id must not cause server error
+PASS | J. 3차 입력 조합과 자격 증명 검사 | password spaces registration
+PASS | J. 3차 입력 조합과 자격 증명 검사 | exact password supplied at registration must log in
+PASS | J. 3차 입력 조합과 자격 증명 검사 | different trimmed password must not log in
+PASS | K. 경계값/요청 조합 | title input ""
+PASS | K. 경계값/요청 조합 | title input " "
+PASS | K. 경계값/요청 조합 | title input 123
+PASS | K. 경계값/요청 조합 | title input {}
+PASS | K. 경계값/요청 조합 | title input []
+PASS | K. 경계값/요청 조합 | title input null
+PASS | K. 경계값/요청 조합 | non-boolean schedule visibility options should be rejected
+PASS | K. 경계값/요청 조합 | string false must not silently create a secret thread
+PASS | L. 3차 수정 회귀 검증 | entries invalid page 0 returns 400
+PASS | L. 3차 수정 회귀 검증 | entries invalid page -1 returns 400
+PASS | L. 3차 수정 회귀 검증 | entries invalid page 1.5 returns 400
+PASS | L. 3차 수정 회귀 검증 | entries invalid page abc returns 400
+PASS | L. 3차 수정 회귀 검증 | entries invalid page 1000001 returns 400
+PASS | L. 3차 수정 회귀 검증 | entries invalid page 9007199254740991 returns 400
+PASS | L. 3차 수정 회귀 검증 | entries valid page 1
+PASS | L. 3차 수정 회귀 검증 | entries valid page 2
+PASS | L. 3차 수정 회귀 검증 | entries valid page 1000000
+PASS | L. 3차 수정 회귀 검증 | schedule invalid page 0 returns 400
+PASS | L. 3차 수정 회귀 검증 | schedule invalid page -1 returns 400
+PASS | L. 3차 수정 회귀 검증 | schedule invalid page 1.5 returns 400
+PASS | L. 3차 수정 회귀 검증 | schedule invalid page abc returns 400
+PASS | L. 3차 수정 회귀 검증 | schedule invalid page 1000001 returns 400
+PASS | L. 3차 수정 회귀 검증 | schedule invalid page 9007199254740991 returns 400
+PASS | L. 3차 수정 회귀 검증 | schedule valid page 1
+PASS | L. 3차 수정 회귀 검증 | schedule valid page 2
+PASS | L. 3차 수정 회귀 검증 | schedule valid page 1000000
+PASS | L. 3차 수정 회귀 검증 | valid false visibility fields accepted
+PASS | L. 3차 수정 회귀 검증 | false visibility fields remain private
+PASS | L. 3차 수정 회귀 검증 | scheduleListed string false rejected even without scheduling
+PASS | L. 3차 수정 회귀 검증 | previewOpen string false rejected even without scheduling
+PASS | L. 3차 수정 회귀 검증 | isSecret string false rejected even without scheduling
+PASS | L. 3차 수정 회귀 검증 | invalid metadata container null
+PASS | L. 3차 수정 회귀 검증 | invalid metadata container []
+PASS | L. 3차 수정 회귀 검증 | invalid metadata container 1
+PASS | L. 3차 수정 회귀 검증 | invalid metadata container "false"
+PASS | L. 3차 수정 회귀 검증 | scheduled edit validation {"scheduledAt":{"toString":null,"valueOf":null}}
+PASS | L. 3차 수정 회귀 검증 | scheduled edit validation {"scheduleMeta":{"title":1}}
+PASS | L. 3차 수정 회귀 검증 | scheduled edit validation {"scheduleListed":"false"}
+PASS | L. 3차 수정 회귀 검증 | scheduled edit validation {"previewOpen":0}
+PASS | L. 3차 수정 회귀 검증 | failed schedule edits preserve original
+PASS | L. 3차 수정 회귀 검증 | spaced secret password accepted
+PASS | L. 3차 수정 회귀 검증 | trimmed secret password rejected
+PASS | L. 3차 수정 회귀 검증 | exact secret password accepted
+PASS | L. 3차 수정 회귀 검증 | exact spaced account password also works for withdrawal
+FAIL | M. 4차 누락 경로와 인증 입력 | missing target PATCH entries
+FAIL | M. 4차 누락 경로와 인증 입력 | missing target DELETE entries
+FAIL | M. 4차 누락 경로와 인증 입력 | missing target PATCH entries/practice/comments
+FAIL | M. 4차 누락 경로와 인증 입력 | missing target DELETE entries/practice/comments
+FAIL | M. 4차 누락 경로와 인증 입력 | malformed credential login
+FAIL | M. 4차 누락 경로와 인증 입력 | malformed credential me
+FAIL | M. 4차 누락 경로와 인증 입력 | malformed credential entries/3846783a-121f-4f76-9de3-1f0d2288290d/unlock
+PASS | M. 4차 누락 경로와 인증 입력 | failed withdrawal preserves account
+PASS | M. 4차 누락 경로와 인증 입력 | other member cannot delete practice reply
+PASS | M. 4차 누락 경로와 인증 입력 | other member cannot edit practice reply
+PASS | M. 4차 누락 경로와 인증 입력 | reply id from another entry cannot be deleted
+PASS | M. 4차 누락 경로와 인증 입력 | failed cross-entry deletion preserves reply
+PASS | M. 4차 누락 경로와 인증 입력 | special metadata key has no prototype effect __proto__
+PASS | M. 4차 누락 경로와 인증 입력 | special metadata key has no prototype effect constructor

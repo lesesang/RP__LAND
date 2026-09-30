@@ -1,0 +1,212 @@
+[
+  {
+    "name": "운영 기록 초기화",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "동일 초기화 재실행 차단",
+    "pass": true,
+    "expected": 409,
+    "actual": 409,
+    "detail": null
+  },
+  {
+    "name": "rp_admin 가입",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "rp_admin 로그인",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "rp_admin 최초 일반 회원 확인",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "첫 계정을 총관리자로 지정",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "rp_user01 가입",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "rp_user01 로그인",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "rp_user01 최초 일반 회원 확인",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "총관리자가 rp_user01 부관리자 임명",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "rp_user02 가입",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "rp_user02 로그인",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "rp_user02 최초 일반 회원 확인",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "총관리자가 rp_user02 부관리자 임명",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "rp_user03 가입",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "rp_user03 로그인",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "rp_user03 최초 일반 회원 확인",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "rp_user04 가입",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "rp_user04 로그인",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "rp_user04 최초 일반 회원 확인",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "rp_user05 가입",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "rp_user05 로그인",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "rp_user05 최초 일반 회원 확인",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "rp_user06 가입",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "rp_user06 로그인",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "rp_user06 최초 일반 회원 확인",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "rp_user07 가입",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "rp_user07 로그인",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "rp_user07 최초 일반 회원 확인",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  },
+  {
+    "name": "활성 계정 총 8명: 총관리자1 부관리자2 일반5",
+    "pass": true,
+    "expected": 200,
+    "actual": 200,
+    "detail": null
+  }
+]
