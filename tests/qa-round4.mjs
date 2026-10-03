@@ -331,6 +331,16 @@ try{
     const r=await victim('entries','POST',{title:'literal key',content:'unchanged',scheduleMeta:JSON.parse('{"'+key+'":{"title":false}}')});
     check(r.status===200,'special metadata key has no prototype effect '+key,r);
   }
+  sec('N. 4차 수정 회귀');
+  for(const password of [null,[],123,true,{toString:null},'x'.repeat(129)]){
+    for(const [path,method,data] of [
+      ['login','POST',{username:'victim_'+suffix,password}],
+      ['me','DELETE',{password}],
+      ['entries/'+secretDoc.data.id+'/unlock','POST',{password}],
+    ]){const r=await victim(path,method,data);check(r.status===401,'invalid credential type/length '+path+' '+typeof password,r);}
+  }
+  check((await victim('login','POST',{username:'victim_'+suffix,password:'Victim-Password!1'})).status===200,'valid login after malformed credentials');
+  check((await victim('me')).data.user.id===victimId,'credential failures preserve account identity');
   const pass=results.filter(r=>r.pass).length, fail=results.length-pass;
   console.log('\n=== 악의적 시나리오 QA 결과 요약 ===');
   console.log(`총 점검 ${results.length}건 · 통과 ${pass}건 · 실패 ${fail}건`);
