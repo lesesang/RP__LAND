@@ -60,7 +60,7 @@ async function handle(req:Request){
  if(p[0]==='maintenance'&&p[1]==='reset'&&method==='POST'){
  const {env}=await import('cloudflare:workers');const key=(env as unknown as Record<string,string>).RESET_TOKEN;
  if(!key||req.headers.get('authorization')!==`Bearer ${key}`||b.confirm!=='RESET_ALL_RP_LAND')fail('허용되지 않은 요청입니다.',403);
- const marker='reset-2026-09-30-qa8';if(await one('SELECT id FROM maintenance WHERE id=?',marker))fail('이미 초기화했습니다.',409);
+ const marker='reset-2026-10-03-admin';if(await one('SELECT id FROM maintenance WHERE id=?',marker))fail('이미 초기화했습니다.',409);
  const tables=['sessions','grants','editors','names','comments','entries','categories','audit','attempts','users'];
  await db.batch([...tables.map(t=>q(`DELETE FROM ${t} WHERE NOT EXISTS(SELECT 1 FROM maintenance WHERE id=?)`,marker)),q('INSERT OR IGNORE INTO maintenance(id) VALUES(?)',marker)]);
  return ok({success:true,counts:Object.fromEntries(await Promise.all(tables.map(async t=>[t,(await one(`SELECT count(*) n FROM ${t}`))!.n])))})
