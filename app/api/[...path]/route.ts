@@ -66,6 +66,29 @@ async function handle(req:Request){
  return ok({success:true,counts:Object.fromEntries(await Promise.all(tables.map(async t=>[t,(await one(`SELECT count(*) n FROM ${t}`))!.n])))})
  }
  const rate=async(key:string,limit=20)=>{const stamp=Date.now(),k=await digest(key);const row=await q('INSERT INTO attempts(key,count,expires) VALUES(?,1,?) ON CONFLICT(key) DO UPDATE SET count=CASE WHEN expires<=? THEN 1 ELSE count+1 END,expires=CASE WHEN expires<=? THEN excluded.expires ELSE expires END RETURNING count,expires',k,stamp+900000,stamp,stamp).first<Row>();if(row!.count>limit){headers.set('Retry-After',String(Math.max(1,Math.ceil((row!.expires-stamp)/1000))));fail('시도 횟수가 많습니다. 15분 후 다시 시도해 주세요.',429)}};
+ if(p[0]==='names'&&method==='DELETE'){
+ auth();const name=characterName(b.name);
+ await q('DELETE FROM names WHERE user_id=? AND name=?',user!.id,name).run();
+ return ok({success:true});
+ }
+ if(p[0]==='me'&&method==='PATCH'){
+ auth();await rate('account-change:'+user!.id,10);
+ const current=await one('SELECT username,password FROM users WHERE id=? AND active=1',user!.id);
+ if(!current||!await verify(b.currentPassword,current!.password))fail('현재 비밀번호가 일치하지 않습니다.',401);
+ if(!Object.hasOwn(b,'username')&&!Object.hasOwn(b,'newPassword'))fail('변경할 아이디 또는 비밀번호를 입력해 주세요.');
+ const username=Object.hasOwn(b,'username')?str(b.username,3,30,'아이디'):current!.username;
+ if(!/^[a-zA-Z0-9가-힣_-]+$/.test(username))fail('아이디에는 문자, 숫자, 밑줄, 하이픈만 사용할 수 있습니다.');
+ const password=Object.hasOwn(b,'newPassword')?await hash(passwordValue(b.newPassword,8,'새 비밀번호')):current!.password;
+ // The update and session revocation are atomic; concurrent changes cannot reuse stale credentials.
+ let changed;
+ try{[changed]=await db.batch([
+ q('UPDATE users SET username=?,password=? WHERE id=? AND active=1 AND username=? AND password=? AND EXISTS(SELECT 1 FROM sessions WHERE token=? AND user_id=users.id AND expires>?) AND NOT EXISTS(SELECT 1 FROM users other WHERE lower(other.username)=lower(?) AND other.id!=?)',username,password,user!.id,current!.username,current!.password,await digest(token),Date.now(),username,user!.id),
+ q('DELETE FROM sessions WHERE user_id=? AND changes()=1',user!.id)
+ ])}catch(error){if(duplicate(error,'users.username'))fail('이미 사용 중인 아이디입니다.',409);throw error}
+ if(!changed.meta.changes)fail('이미 사용 중인 아이디이거나 계정 정보가 변경되었습니다. 확인 후 다시 시도해 주세요.',409);
+ headers.append('Set-Cookie','rp_session=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0');
+ await log('update-account',user!.id);return ok({success:true,reauthenticate:true});
+ }
  if(p[0]==='me'){if(method==='DELETE'){auth();if(user!.role==='SUPER')fail('총관리자 계정은 탈퇴할 수 없습니다.');if(!await verify(b.password,(await one('SELECT password FROM users WHERE id=?',user!.id))!.password))fail('비밀번호가 일치하지 않습니다.',401);await db.batch([q('UPDATE users SET active=0,password=?,username=? WHERE id=?','',`deleted-${user!.id}`,user!.id),q('DELETE FROM sessions WHERE user_id=?',user!.id),q('DELETE FROM names WHERE user_id=?',user!.id)]);await log('withdraw',user!.id);return ok({success:true})}return ok({user,names:user?await all('SELECT name FROM names WHERE user_id=?',user.id):[],setup:!(await one("SELECT id FROM users WHERE role='SUPER' LIMIT 1"))})}
  if(p[0]==='register'&&method==='POST'){const username=str(b.username,3,30,'아이디');if(!/^[a-zA-Z0-9가-힣_-]+$/.test(username))fail('아이디에는 문자, 숫자, 밑줄, 하이픈만 사용할 수 있습니다.');const password=passwordValue(b.password,8,'비밀번호');await rate('register:'+username.toLowerCase());const visitor=req.headers.get('oai-authenticated-user-id');await rate('signup-visitor:'+(visitor||'unattributed'),10);await rate('signup-global',60);await q('DELETE FROM attempts WHERE expires<=?',Date.now()).run();const uid=id();const hp=await hash(password);try{const created=await q('INSERT INTO users(id,username,password,role,created) SELECT ?,?,?,?,? WHERE NOT EXISTS(SELECT 1 FROM users WHERE lower(username)=lower(?))',uid,username,hp,'USER',now(),username).run();if(!created.meta.changes)fail('이미 사용 중인 아이디입니다. 대소문자는 구분하지 않습니다.',409)}catch(error){if(duplicate(error,'users.username'))fail('이미 사용 중인 아이디입니다.',409);throw error}return ok({success:true})}
  if(p[0]==='login'&&method==='POST'){const username=str(b.username,1,30,'아이디');await rate('login:'+username.toLowerCase());let u=await one('SELECT * FROM users WHERE username=? AND active=1',username);if(!u){const matches=await all('SELECT * FROM users WHERE lower(username)=lower(?) AND active=1 LIMIT 2',username);if(matches.length===1)u=matches[0]}if(!u||!await verify(b.password,u.password))fail('아이디 또는 비밀번호가 일치하지 않습니다.',401);const t=id()+id();await q('INSERT INTO sessions(token,user_id,expires) VALUES(?,?,?)',await digest(t),u!.id,Date.now()+7*86400000).run();headers.append('Set-Cookie',`rp_session=${t}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=604800`);return ok({success:true})}
