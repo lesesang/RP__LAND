@@ -1,25 +1,34 @@
+import {Rich} from '@/components/rich-text';
+
+const formattingExamples=[
+ {title:'줄바꿈',tip:'Enter를 누른 곳에서 줄이 바뀝니다. 빈 줄을 넣으면 문장 사이가 벌어집니다.',text:'문을 열었다.\n바깥에는 비가 내리고 있었다.\n\n“오래 기다렸어?”'},
+ {title:'굵게 · B',tip:'강조할 글자를 선택하고 B를 누릅니다.',text:'“**여기서 기다려.** 곧 돌아올게.”'},
+ {title:'기울임 · I',tip:'글자를 선택하고 I를 누릅니다.',text:'*그는 잠시 말을 멈추었다.*'},
+ {title:'밑줄 · U',tip:'글자를 선택하고 U를 누릅니다.',text:'약속 장소는 ++북쪽 성문++입니다.'},
+ {title:'색상',tip:'색상 칸에서 색을 고른 뒤 ‘색상 적용’을 누릅니다.',text:'[color=#b42318]붉은 경고문[/color] 아래로 [color=#2457b2]푸른 글씨[/color]가 이어졌다.'},
+ {title:'루비',tip:'본문을 선택하고 ‘루비 읽기’ 칸에 윗글자를 적은 뒤 ‘루비’를 누릅니다.',text:'그의 이름은 [ruby=은하]銀河[/ruby]였다.'},
+ {title:'접어보기',tip:'아래 결과의 ‘인물의 비밀’을 눌러 펼치고 다시 눌러 접어 보세요. 양식의 제목도 바꿀 수 있습니다.',text:'[fold=인물의 비밀]그는 사실 **왕국의 마지막 기사**였다.[/fold]'},
+ {title:'투명글',tip:'아래 문장의 빈 부분을 누르거나 글자를 선택해 보세요. 키보드 Tab으로 초점을 맞춰도 읽을 수 있습니다. 비밀번호로 보호되지는 않습니다.',text:'그가 숨긴 말은 [transparent]“다시 만나고 싶었어.”[/transparent]였다.'},
+ {title:'목록 · ≡',tip:'각 항목을 새 줄에 쓰고 앞에 ‘- ’를 붙입니다.',text:'- 낡은 지도\n- 은빛 열쇠\n- 봉인된 편지'},
+ {title:'인용 · ❞',tip:'인용할 줄 앞에 ‘> ’를 붙입니다.',text:'> 해가 지기 전에 돌아오시오.\n> 성문은 밤에 닫힙니다.'},
+ {title:'코드 · </>',tip:'백틱 하나로 감싸면 꾸밈 문법을 적용하지 않고 그대로 보여 줍니다. 코드 안의 주사위도 굴러가지 않습니다.',text:'양식은 `**굵게**` 또는 `[dice:1d6]`처럼 씁니다.'},
+ {title:'코드 블록',tip:'여러 줄의 양식을 그대로 보여 줄 때 사용합니다. 시작과 끝을 백틱 3개로 감쌉니다.',text:'```\n**이 글자는 굵어지지 않습니다.**\n[dice:1d6]\n```'},
+ {title:'링크',tip:'대괄호에는 표시할 글자, 소괄호에는 주소를 넣습니다. 이 예시는 연습장으로 연결됩니다.',text:'[연습장으로 이동](?view=practice)'},
+ {title:'이미지 주소',tip:'직접 열리는 이미지 주소를 넣습니다. 아래는 사이트 로고를 사용한 예시입니다. 외부 이미지는 /favicon.svg 대신 https://로 시작하는 이미지 주소를 넣으세요.',text:'![RP 랜드 로고](/favicon.svg)'},
+];
+function FormattingExamples(){return <div className="formatting-examples">{formattingExamples.map(example=><section className="formatting-example" key={example.title}>
+<h3>{example.title}</h3><p className="muted">{example.tip}</p>
+<div className="formatting-comparison"><div><span className="formatting-label">입력 예시</span><pre className="formatting-source"><code>{example.text}</code></pre></div><div><span className="formatting-label">실제 표시 모습</span><div className="formatting-result"><Rich text={example.text}/></div></div></div>
+</section>)}</div>}
+
 export function HelpPage(){return <div className="panel article help-page">
 <h2>시작하기</h2>
 <p>로그인하면 스레드·위키를 작성하고 레스를 남길 수 있습니다. 스레드는 레스로 이야기를 이어 가는 곳, 위키는 설정을 정리하는 문서입니다. 위키에는 레스를 달 수 없습니다.</p>
 <p>캐릭터명은 레스마다 바꿀 수 있으며, 비워 두면 계정 아이디를 사용합니다. 사용한 이름은 다음 작성 때 선택할 수 있습니다. ‘내 계정’에서 이름 옆 삭제 버튼을 누르고 확인하면 저장 목록에서만 지워집니다. 기존 레스의 캐릭터명은 유지되며, 그 이름으로 다시 작성하면 다시 저장됩니다.</p>
-<h2>글 꾸미기</h2>
-<p>꾸밀 글자를 선택하고 도구 모음의 버튼을 누르세요. 선택하지 않으면 커서 위치에 양식이 들어갑니다. Enter로 줄을 바꾸고, 미리보기에서 모양을 확인할 수 있습니다.</p>
-<ul>
-<li><strong>굵게 (B)</strong>: <code>**강조할 글자**</code>를 굵게 표시합니다.</li>
-<li><strong>기울임 (I)</strong>: <code>*기울일 글자*</code>를 기울여 표시합니다.</li>
-<li><strong>밑줄 (U)</strong>: <code>++밑줄을 넣을 글자++</code> 아래에 선을 긋습니다.</li>
-<li><strong>목록 (≡)</strong>: 각 줄 앞에 <code>- </code>를 붙입니다. 다음 항목도 새 줄에서 같은 방식으로 입력하세요.</li>
-<li><strong>인용 (❞)</strong>: 인용할 각 줄 앞에 <code>&gt; </code>를 붙입니다.</li>
-<li><strong>코드 (&lt;/&gt;)</strong>: <code>`내용`</code>처럼 감싸면 한 줄의 양식을 그대로 보여 줍니다. 코드 안의 꾸밈·앵커·주사위는 작동하지 않습니다.</li>
-<li><strong>코드 블록</strong>: 여러 줄을 그대로 보여 줍니다. 버튼으로 삽입한 시작·끝의 백틱 3개 사이에 내용을 적으세요. 양식 예시를 공유할 때 사용할 수 있습니다.</li>
-<li><strong>색상</strong>: 글자를 선택하고 색상 칸에서 색을 고른 뒤 ‘색상 적용’을 누릅니다. <code>[color=#ff0000]빨간 글자[/color]</code>처럼 색상 코드를 직접 바꿀 수도 있습니다.</li>
-<li><strong>접어보기</strong>: <code>[fold=제목]숨겨 둘 내용[/fold]</code>의 제목을 누르면 내용이 펼쳐지고, 다시 누르면 접힙니다. 제목과 내용을 바꿔 사용하세요.</li>
-<li><strong>투명글</strong>: <code>[transparent]내용[/transparent]</code>을 평소에는 숨깁니다. 누르거나 키보드로 초점을 맞추거나 글자를 선택하면 읽을 수 있습니다. 비밀번호로 보호되는 기능은 아닙니다.</li>
-<li><strong>루비</strong>: 본문 글자를 선택하고 ‘루비 읽기’ 칸에 작은 윗글자를 적은 뒤 ‘루비’를 누릅니다. <code>[ruby=읽는 법]본문[/ruby]</code>에서 ‘읽는 법’이 본문 위에 표시됩니다.</li>
-<li><strong>링크</strong>: <code>[표시할 이름](https://주소)</code>에서 이름과 주소를 바꿉니다.</li>
-<li><strong>이미지 주소</strong>: <code>![이미지 설명](https://이미지주소)</code>에 직접 열리는 이미지 주소를 넣습니다. 파일 업로드 기능은 아닙니다.</li>
-<li><strong>미리보기</strong>: 등록 전 줄바꿈과 꾸밈을 확인합니다. ‘작성’을 누르면 다시 편집할 수 있습니다. 주사위는 미리보기에서 굴러가지 않습니다.</li>
-</ul>
+<h2>레스 꾸미기</h2>
+<p>꾸밀 글자를 선택하고 도구 모음의 버튼을 누르세요. 선택하지 않으면 커서 위치에 양식이 들어갑니다. 아래에서 입력한 내용과 실제 레스에 표시되는 모습을 비교할 수 있습니다.</p>
+<FormattingExamples/>
+<p>작성창의 ‘미리보기’에서도 같은 모양을 확인할 수 있습니다. ‘작성’을 누르면 다시 편집하며, 주사위는 레스를 등록할 때 굴러갑니다.</p>
 <h2>주사위</h2>
 <p>레스 입력칸의 ‘주사위’에서 최소·최대, 개수, 보정값을 숫자를 직접 입력한 뒤 ‘양식 삽입’을 누릅니다. 미리보기에서는 굴리지 않으며, 레스를 등록할 때 결과가 정해집니다.</p>
 <ul>
