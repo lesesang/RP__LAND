@@ -35,7 +35,26 @@ pnpm install --frozen-lockfile
 pnpm run build
 ```
 
-`wrangler whoami`가 해당 계정으로 로그인되어 있어야 합니다. 앞서 받은 `Authentication error [code: 10000]`가 계속되면 D1 대시보드에서 이미 DB가 만들어졌는지 확인하고, Cloudflare 대시보드에서 D1 권한이 있는지 확인하세요. API 토큰을 이 저장소나 채팅에 넣지 마세요.
+`wrangler whoami`가 해당 계정으로 로그인되어 있어야 합니다. 앞서 `whoami`는 성공했지만 D1 API가 `Authentication error [code: 10000]`를 반환했습니다. 대시보드에서 D1이 이미 만들어졌으니 중복 생성하지 마세요. OAuth 오류가 계속되면 Cloudflare 대시보드의 **My Profile → API Tokens**에서 계정 범위를 `c7968b6871f33603b8f201fbfe66f877`로 제한한 토큰을 만드세요. D1 마이그레이션과 새 Worker 배포에 필요한 `D1:Edit`과 Workers Admin 권한을 부여합니다. 토큰은 PowerShell의 현재 세션에만 잠깐 설정하며 GitHub나 채팅에 붙여 넣지 않습니다.
+
+PowerShell에서 토큰을 가려서 입력하려면:
+
+```powershell
+$secureToken = Read-Host "Cloudflare API token" -AsSecureString
+$tokenPointer = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($secureToken)
+try {
+  $env:CLOUDFLARE_API_TOKEN = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($tokenPointer)
+} finally {
+  [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($tokenPointer)
+}
+```
+
+배포와 secret 등록이 끝나면 환경변수를 지웁니다.
+
+```powershell
+Remove-Item Env:\CLOUDFLARE_API_TOKEN
+$secureToken.Dispose()
+```
 
 빌드가 끝난 뒤 D1에 빈 스키마를 적용합니다.
 
