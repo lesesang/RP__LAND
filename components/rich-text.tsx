@@ -42,9 +42,10 @@ export function Rich({ text, rolls = [], offset = 0, depth = 0, inline = false, 
       if (prepared.tokens[i]?.kind === 'fold') return <Fragment>{children}</Fragment>;
       return inline ? <span className="rp-inline-paragraph">{children}</span> : <p>{children}</p>;
     },
+    img: ({node, ...props}: any) => <img {...props} alt={props.alt||''} loading="lazy" referrerPolicy="no-referrer"/>,
     a: ({ node, href, children, ...props }: any) => isPracticeResponseLink(href)
       ? <span className="rp-anchor-disabled" title="연습장 레스를 향하는 링크는 비활성화됩니다.">{children}</span>
-      : <a {...props} href={href} rel="noopener noreferrer" target={href?.startsWith('?') || href?.startsWith('#') ? undefined : '_blank'}>{children}</a>,
+      : <a {...props} href={href} rel="noopener noreferrer" referrerPolicy="no-referrer" target={href?.startsWith('?') || href?.startsWith('#') ? undefined : '_blank'}>{children}</a>,
   };
   const leading = /^\n+/.exec(prepared.text)?.[0].length || 0;
   const trailing = /\n+$/.exec(prepared.text)?.[0].length || 0;
