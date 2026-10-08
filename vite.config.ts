@@ -30,7 +30,7 @@ const localBindingConfig = {
     ? [
         {
           binding: d1,
-          database_name: personalDeploy ? "my-db-RP-Land" : "site-creator-d1",
+          database_name: personalDeploy ? "rp-land" : "site-creator-d1",
           database_id: personalDeploy ? personalDatabaseId : SITE_CREATOR_PLACEHOLDER_DATABASE_ID,
           migrations_dir: "../../drizzle",
         },

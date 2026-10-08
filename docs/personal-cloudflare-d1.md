@@ -5,8 +5,8 @@
 ## 준비 상태
 
 - 계정: Cloudflare 계정 `c7968b6871f33603b8f201fbfe66f877`
-- D1 이름: `my-db-RP-Land`
-- D1 ID: `58ef2317-7ed0-41e0-a055-106589cf0239`
+- D1 이름: `rp-land`
+- D1 ID: `0c2063d5-ddfe-4d46-a6c9-269417d63a27`
 - 기존 RP LAND 자료는 최근 초기화되어 새 D1에는 옮길 계정/게시물이 없습니다.
 - 이 저장소는 `RP_DEPLOY_TARGET=personal`일 때에만 위 D1과 계정 ID를 개인 Worker 설정에 반영합니다. 기본 Sites 빌드는 계속 기존 Sites 연결을 사용합니다.
 - RP LAND에는 자체 ID/비밀번호 로그인이 있으므로 ChatGPT 전용 로그인에 의존하지 않습니다.
@@ -29,7 +29,7 @@ Set-Location .\RP__LAND
 
 ```powershell
 $env:RP_DEPLOY_TARGET = "personal"
-$env:RP_PERSONAL_D1_ID = "58ef2317-7ed0-41e0-a055-106589cf0239"
+$env:RP_PERSONAL_D1_ID = "0c2063d5-ddfe-4d46-a6c9-269417d63a27"
 $env:CLOUDFLARE_ACCOUNT_ID = "c7968b6871f33603b8f201fbfe66f877"
 pnpm install --frozen-lockfile
 pnpm run build
@@ -62,7 +62,7 @@ $secureToken.Dispose()
 pnpm exec wrangler d1 migrations apply DB --remote --config .\dist\server\wrangler.json
 ```
 
-개인용 빌드 설정은 `DB` 바인딩을 방금 만든 D1 UUID와 연결하며 `drizzle/`의 마이그레이션 경로도 포함합니다. 마이그레이션은 순서대로 적용됩니다.
+Cloudflare 안내에 나온 바인딩은 `rp_land`였지만, 앱은 `DB`라는 이름으로 DB를 읽습니다. 저장소 설정이 `DB` 바인딩과 `rp-land` D1을 연결하므로 별도 설정을 추가할 필요가 없습니다. `drizzle/` 마이그레이션도 포함되며, 마이그레이션은 순서대로 적용됩니다.
 
 ## 3. Worker 배포와 총관리자 키 설정
 
