@@ -43,3 +43,9 @@ const recorded=renderToStaticMarkup(<Rich text={'결과 [dice:1x0..0]'} rolls={[
 assert.match(recorded,/class="dice"/);
 assert.ok(!recorded.includes('등록할 때 굴림'));
 console.log('PASS formatting, literal code, links, image markup, unsafe markup rejection, recorded zero dice');
+
+const explicitDice=renderToStaticMarkup(<Rich text={'[dice:3x1..6!]'} rolls={[{start:0,notation:'[dice:3x1..6!]',sides:6,min:1,max:6,unique:true,values:[5,6,2],total:13}]}/>);
+assert.match(explicitDice,/\[dice:3x1\.\.6!= 5, 6, 2 · 합계 13\]/);
+const singleDice=renderToStaticMarkup(<Rich text={'[dice:1x0..0-5]'} rolls={[{start:0,notation:'[dice:1x0..0-5]',sides:1,values:[-5],total:-5}]}/>);
+assert.match(singleDice,/\[dice:1x0\.\.0-5= -5\]/);
+console.log('PASS visible dice notation with unique rolls, totals and signed results');

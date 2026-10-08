@@ -40,7 +40,7 @@ export function Rich({ text, rolls = [], offset = 0, depth = 0, inline = false, 
       }
       case 'dice': {
         const roll = rolls.find(r => r.start === offset + item.start && r.notation === item.raw);
-        return roll ? <span className="dice" title={roll.notation + (roll.modifier ? ` · 각 결과에 ${roll.modifier>0?'+':''}${roll.modifier} 보정` : '')}><Dices size={14}/><span>{roll.values.join(', ')}{roll.values.length>1&&<> · 합계 {roll.total}</>}</span></span> : <code className="dice-pending">{item.raw} · 등록할 때 굴림</code>;
+        return roll ? <span className="dice" title={roll.notation + (roll.modifier ? ` · 각 결과에 ${roll.modifier>0?'+':''}${roll.modifier} 보정` : '')}><Dices size={14}/><span>{roll.notation.replace(/\]$/, '')}= {roll.values.join(', ')}{roll.values.length>1&&<> · 합계 {roll.total}</>}]</span></span> : <code className="dice-pending">{item.raw} · 등록할 때 굴림</code>;
       }
     }
     return item.raw;
