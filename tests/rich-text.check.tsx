@@ -15,6 +15,8 @@ assert.equal(anchorHref({kind:'thread',entryId:id},'practice',1),null);
 assert.equal(anchorHref({kind:'practice'},id,1500),'?view=thread&id='+id+'#res-1500');
 const anchors=renderToStaticMarkup(<Rich context={{kind:'practice'}} text={'>>1 >>>practice/1 >>>'+id+'/3'} />);
 assert.equal((anchors.match(/<a /g)||[]).length,1);
+assert.match(anchors,/>↗3<\/a>/);
+assert.ok(!anchors.includes('&gt;&gt;&gt;'+id));
 const literal=renderToStaticMarkup(<Rich text={'`[ruby=읽기]본문[/ruby]`'}/>);
 assert.ok(!literal.includes('<ruby'));
 console.log('PASS rich text: line breaks, ruby, nested styles, fold structure, anchors, code literals');

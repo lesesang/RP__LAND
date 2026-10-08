@@ -1,0 +1,1 @@
+ALTER TABLE `entries` ADD `cover_image` text;

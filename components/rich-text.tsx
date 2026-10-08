@@ -1,4 +1,5 @@
 'use client';
+import {toast} from 'sonner';
 import { Fragment } from 'react';
 import Markdown from 'react-markdown';
 import { Dices } from 'lucide-react';
@@ -24,7 +25,18 @@ export function Rich({ text, rolls = [], offset = 0, depth = 0, inline = false, 
         return inline ? <span>{child}</span> : <Collapsible className="rp-fold"><CollapsibleTrigger className="rp-fold-title">▸ {item.value}</CollapsibleTrigger><CollapsibleContent className="rp-fold-body">{child}</CollapsibleContent></Collapsible>;
       case 'anchor': {
         const href = anchorHref(context, item.value || undefined, Number(item.body));
-        return href ? <a href={href} className="rp-anchor">{item.raw}</a> : <span className="rp-anchor-disabled" title="연습장 레스는 앵커 대상으로 지정할 수 없습니다.">{item.raw}</span>;
+        return href ? <a href={href} className="rp-anchor" title={item.value?`다른 스레드의 ${Number(item.body)}번 레스`:undefined} onClick={async event=>{
+          event.preventDefault();
+          try{
+            const destination=item.value||context.entryId,origin=location.href;
+            const response=await fetch(`/api/entries/${destination}/anchors/${Number(item.body)}`);
+            const data=await response.json() as {status?:string;error?:string};if(location.href!==origin)return;if(!response.ok)throw new Error(data.error||'레스를 찾을 수 없습니다.');
+            if(data.status!=='visible'){toast.error(data.status==='deleted'?'삭제된 레스입니다.':'가려진 레스입니다.');return}
+            const current=new URLSearchParams(location.search).get('id');
+            if(current===destination){const target=document.getElementById('res-'+Number(item.body));if(target){history.replaceState(null,'',href);target.scrollIntoView({block:'center'});return}}
+            location.assign(href);
+          }catch(error){toast.error((error as Error).message)}
+        }}>{item.value?`↗${Number(item.body)}`:item.raw}</a> : <span className="rp-anchor-disabled" title="연습장 레스는 앵커 대상으로 지정할 수 없습니다.">{item.raw}</span>;
       }
       case 'dice': {
         const roll = rolls.find(r => r.start === offset + item.start && r.notation === item.raw);

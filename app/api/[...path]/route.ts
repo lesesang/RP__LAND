@@ -26,11 +26,16 @@ function pageNumber(url:URL){
  if(!/^[0-9]+$/.test(raw)||!Number.isSafeInteger(page)||page<1||page>1000000)fail('페이지 번호는 1~1,000,000 사이의 정수여야 합니다.');
  return page;
 }
+function coverImage(value:unknown):string|null {
+ if(value===undefined||value===null||value==='')return null;
+ if(typeof value!=='string'||value.length>2048)fail('대표 이미지 주소는 2,048자 이하로 입력해 주세요.');
+ try{const u=new URL(value as string);if(!['https:','http:'].includes(u.protocol)||u.username||u.password)throw new Error();return u.href}catch{fail('대표 이미지는 http 또는 https 이미지 주소를 입력해 주세요.');return null}
+}
 function scheduleInput(b:Row,secret:boolean){
  const listed=optionalBoolean(b,'scheduleListed',!secret),open=optionalBoolean(b,'previewOpen',false);
  const m=Object.hasOwn(b,'scheduleMeta')?b.scheduleMeta:{};
  if(m===null||typeof m!=='object'||Array.isArray(m))fail('예약 표시 설정이 올바르지 않습니다.');
- const meta=JSON.stringify({title:optionalBoolean(m,'title',true),author:optionalBoolean(m,'author',true),categories:optionalBoolean(m,'categories',true)});
+ const meta=JSON.stringify({title:optionalBoolean(m,'title',true),author:optionalBoolean(m,'author',true),categories:optionalBoolean(m,'categories',true),image:optionalBoolean(m,'image',true)});
  const scheduled=b.scheduledAt;
  if(scheduled===undefined||scheduled===null||scheduled==='')return {at:null,listed:0,open:0,meta};
  if(typeof scheduled!=='string'||scheduled.length>64)fail('예약 시각은 현재 이후로 설정해 주세요.');
@@ -64,6 +69,7 @@ function checkRoute(p:string[],method:string){
  if(p.length===1){allowed=({me:['GET','PATCH','DELETE'],names:['DELETE'],register:['POST'],login:['POST'],logout:['POST'],setup:['POST'],audit:['GET'],schedule:['GET'],users:['GET','PATCH','DELETE'],categories:['GET','POST','PATCH'],entries:['GET','POST','PATCH','DELETE']} as Record<string,string[]>)[p[0]]}
  else if(p.length===2){if(p[0]==='maintenance'&&p[1]==='reset')allowed=['POST'];else if(p[0]==='entries')allowed=['GET','PATCH','DELETE'];else if(p[0]==='users')allowed=['GET','PATCH','DELETE'];else if(p[0]==='categories')allowed=['GET','PATCH']}
  else if(p.length===3&&p[0]==='entries'){allowed=({comments:['GET','POST','PATCH','DELETE'],editors:['GET','POST','DELETE'],unlock:['POST']} as Record<string,string[]>)[p[2]]}
+ else if(p.length===4&&p[0]==='entries'&&p[2]==='anchors')allowed=['GET'];
  else if(p.length===4&&p[0]==='entries'&&p[2]==='comments')allowed=['PATCH','DELETE'];
  if(!Array.isArray(allowed)||p.some(x=>!x))fail('요청을 찾을 수 없습니다.',404);
  if(!allowed!.includes(method))fail('지원하지 않는 요청 방식입니다.',405);
@@ -84,7 +90,7 @@ async function handle(req:Request){
  if(p[0]==='maintenance'&&p[1]==='reset'&&method==='POST'){
  const {env}=await import('cloudflare:workers');const key=(env as unknown as Record<string,string>).RESET_TOKEN;
  if(!key||req.headers.get('authorization')!==`Bearer ${key}`||b.confirm!=='RESET_ALL_RP_LAND')fail('허용되지 않은 요청입니다.',403);
- const marker='reset-2026-10-07-empty';if(await one('SELECT id FROM maintenance WHERE id=?',marker))fail('이미 초기화했습니다.',409);
+ const marker='reset-2026-10-08-launch';if(await one('SELECT id FROM maintenance WHERE id=?',marker))fail('이미 초기화했습니다.',409);
  const tables=['sessions','grants','editors','names','comments','entries','categories','audit','attempts','users'];
  await db.batch([...tables.map(t=>q(`DELETE FROM ${t} WHERE NOT EXISTS(SELECT 1 FROM maintenance WHERE id=?)`,marker)),q('INSERT OR IGNORE INTO maintenance(id) VALUES(?)',marker)]);
  return ok({success:true,counts:Object.fromEntries(await Promise.all(tables.map(async t=>[t,(await one(`SELECT count(*) n FROM ${t}`))!.n])))})
@@ -129,15 +135,15 @@ async function handle(req:Request){
  const access="(e.author_id=? OR ?=1 OR EXISTS(SELECT 1 FROM editors x WHERE x.entry_id=e.id AND x.user_id=?))";
  const where="e.kind='thread' AND e.deleted=0 AND e.scheduled_at>? AND "+(mine?access:"e.schedule_listed=1");
  const args=mine?[stamp,who,privileged,who]:[stamp];
- const rows=await all(`SELECT e.id,e.title,e.author_id,e.categories,e.scheduled_at,e.schedule_listed,e.preview_open,e.schedule_meta,e.secret IS NOT NULL is_secret,CASE WHEN u.active=1 THEN u.username ELSE '탈퇴 사용자' END author,${access} can_manage FROM entries e LEFT JOIN users u ON u.id=e.author_id WHERE ${where} ORDER BY e.scheduled_at ASC,e.rowid ASC LIMIT 10 OFFSET ?`,who,privileged,who,...args,(page-1)*10);
- const entries=rows.map(e=>{let m:Row={};try{m=JSON.parse(e.schedule_meta)}catch{}return {id:e.id,title:m.title?e.title:'예약 스레드',author:m.author?e.author:null,categories:m.categories?e.categories:'[]',scheduled_at:e.scheduled_at,is_secret:e.is_secret,listed:!!e.schedule_listed,canOpen:!!e.preview_open||!!e.can_manage,canManage:!!e.can_manage}});
+ const rows=await all(`SELECT e.id,e.title,e.cover_image,e.author_id,e.categories,e.scheduled_at,e.schedule_listed,e.preview_open,e.schedule_meta,e.secret IS NOT NULL is_secret,CASE WHEN u.active=1 THEN u.username ELSE '탈퇴 사용자' END author,${access} can_manage FROM entries e LEFT JOIN users u ON u.id=e.author_id WHERE ${where} ORDER BY e.scheduled_at ASC,e.rowid ASC LIMIT 10 OFFSET ?`,who,privileged,who,...args,(page-1)*10);
+ const entries=rows.map(e=>{let m:Row={};try{m=JSON.parse(e.schedule_meta)}catch{}return {id:e.id,cover_image:m.image===false?null:e.cover_image,title:m.title?e.title:'예약 스레드',author:m.author?e.author:null,categories:m.categories?e.categories:'[]',scheduled_at:e.scheduled_at,is_secret:e.is_secret,listed:!!e.schedule_listed,canOpen:!!e.preview_open||!!e.can_manage,canManage:!!e.can_manage}});
  return ok({entries,total:(await one(`SELECT count(*) n FROM entries e WHERE ${where}`,...args))!.n,page});
  }
  if(p[0]==='entries'){
   const eid=p[1];let entry:Row|null=null;
   if(eid==='practice'){await q("INSERT OR IGNORE INTO entries(id,kind,title,content,categories,created,updated) VALUES('practice','practice','연습장','캐릭터의 목소리와 문장, 주사위를 자유롭게 연습하세요. 내가 쓴 댓글은 언제든 수정할 수 있습니다.','[]',?,?)",now(),now()).run()}
-  if(!eid&&method==='GET'){const kind=url.searchParams.get('kind')==='wiki'?'wiki':'thread',search=url.searchParams.get('q')||'',cat=url.searchParams.get('category')||'',page=pageNumber(url);const where="e.kind=? AND e.deleted=0 AND (e.scheduled_at IS NULL OR e.scheduled_at<=?) AND (e.title LIKE ? ESCAPE '\\' OR (e.secret IS NULL AND e.content LIKE ? ESCAPE '\\')) AND (?='' OR EXISTS(SELECT 1 FROM json_each(e.categories) WHERE value=?))";const pattern='%'+search.replace(/[\\%_]/g,'\\$&')+'%';const args=[kind,now(),pattern,pattern,cat,cat];const rows=await all(`SELECT e.id,e.title,e.kind,e.categories,e.created,e.updated,e.author_id,CASE WHEN u.active=1 THEN u.username ELSE '탈퇴 사용자' END author,e.secret IS NOT NULL is_secret,(SELECT count(*) FROM comments c WHERE c.entry_id=e.id) comment_count FROM entries e LEFT JOIN users u ON u.id=e.author_id WHERE ${where} ORDER BY MAX(e.updated,COALESCE(e.scheduled_at,e.updated)) DESC LIMIT 20 OFFSET ?`,...args,(page-1)*20);const count=await one(`SELECT count(*) n FROM entries e WHERE ${where}`,...args);return ok({entries:rows,total:count!.n,page})}
-  if(!eid&&method==='POST'){auth();const kind=b.kind==='wiki'?'wiki':'thread',title=str(b.title,1,120,'제목'),content=str(b.content,1,kind==='wiki'?50000:5000,'본문');const cats=Array.isArray(b.categories)?[...new Set(b.categories)]:[];if(cats.length>3)fail('카테고리는 최대 3개입니다.');if(cats.some(c=>typeof c!=='string'))fail('잘못된 카테고리입니다.');for(const c of cats)if(!await one('SELECT id FROM categories WHERE id=?',c))fail('잘못된 카테고리입니다.');const isSecret=optionalBoolean(b,'isSecret',false);const secret=kind==='thread'&&isSecret?await hash(passwordValue(b.secretPw,4,'비밀글 비밀번호')):null;const schedule=scheduleInput(kind==='thread'?b:{},!!secret);const eid=id();await q('INSERT INTO entries(id,kind,title,content,author_id,secret,categories,created,updated,scheduled_at,schedule_listed,preview_open,schedule_meta) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)',eid,kind,title,content,user!.id,secret,JSON.stringify(cats),now(),now(),schedule.at,schedule.listed,schedule.open,schedule.meta).run();return ok({id:eid})}
+  if(!eid&&method==='GET'){const kind=url.searchParams.get('kind')==='wiki'?'wiki':'thread',search=url.searchParams.get('q')||'',cat=url.searchParams.get('category')||'',page=pageNumber(url);const where="e.kind=? AND e.deleted=0 AND (e.scheduled_at IS NULL OR e.scheduled_at<=?) AND (e.title LIKE ? ESCAPE '\\' OR (e.secret IS NULL AND e.content LIKE ? ESCAPE '\\')) AND (?='' OR EXISTS(SELECT 1 FROM json_each(e.categories) WHERE value=?))";const pattern='%'+search.replace(/[\\%_]/g,'\\$&')+'%';const args=[kind,now(),pattern,pattern,cat,cat];const rows=await all(`SELECT e.id,e.title,e.cover_image,e.kind,e.categories,e.created,e.updated,e.author_id,CASE WHEN u.active=1 THEN u.username ELSE '탈퇴 사용자' END author,e.secret IS NOT NULL is_secret,(SELECT count(*) FROM comments c WHERE c.entry_id=e.id) comment_count FROM entries e LEFT JOIN users u ON u.id=e.author_id WHERE ${where} ORDER BY MAX(e.updated,COALESCE(e.scheduled_at,e.updated)) DESC LIMIT 20 OFFSET ?`,...args,(page-1)*20);const count=await one(`SELECT count(*) n FROM entries e WHERE ${where}`,...args);return ok({entries:rows,total:count!.n,page})}
+  if(!eid&&method==='POST'){auth();const kind=b.kind==='wiki'?'wiki':'thread',title=str(b.title,1,120,'제목'),content=str(b.content,1,kind==='wiki'?50000:5000,'본문');const cats=Array.isArray(b.categories)?[...new Set(b.categories)]:[];if(cats.length>3)fail('카테고리는 최대 3개입니다.');if(cats.some(c=>typeof c!=='string'))fail('잘못된 카테고리입니다.');for(const c of cats)if(!await one('SELECT id FROM categories WHERE id=?',c))fail('잘못된 카테고리입니다.');const isSecret=optionalBoolean(b,'isSecret',false);const secret=kind==='thread'&&isSecret?await hash(passwordValue(b.secretPw,4,'비밀글 비밀번호')):null;const schedule=scheduleInput(kind==='thread'?b:{},!!secret);const eid=id();await q('INSERT INTO entries(id,kind,title,content,author_id,secret,categories,created,updated,scheduled_at,schedule_listed,preview_open,schedule_meta,cover_image) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)',eid,kind,title,content,user!.id,secret,JSON.stringify(cats),now(),now(),schedule.at,schedule.listed,schedule.open,schedule.meta,coverImage(b.coverImage)).run();return ok({id:eid})}
   if(!eid)fail('문서 ID가 필요합니다.');
   entry=await one("SELECT e.*,CASE WHEN u.active=1 THEN u.username ELSE '탈퇴 사용자' END author FROM entries e LEFT JOIN users u ON u.id=e.author_id WHERE e.id=? AND e.deleted=0",eid);if(!entry)fail('문서를 찾을 수 없습니다.',404);const e=entry!;
   const isAdmin=!!user&&['SUPER','SUB'].includes(user.role),isOwner=user?.id===e.author_id,canEdit=isAdmin||isOwner||!!(user&&await one('SELECT user_id FROM editors WHERE entry_id=? AND user_id=?',eid,user.id));
@@ -145,6 +151,12 @@ async function handle(req:Request){
   if(pending&&!e.preview_open&&!canEdit)fail('아직 공개되지 않은 예약 스레드입니다.',404);
   if(p[2]==='unlock'&&method==='POST'){await rate('secret:'+eid);if(!e.secret||!await verify(b.password,e.secret))fail('비밀번호가 일치하지 않습니다.',401);const t=id()+id();await q('INSERT INTO grants(token,entry_id,expires) VALUES(?,?,?)',await digest(t),eid,Date.now()+3600000).run();headers.append('Set-Cookie',`rp_grant_${eid}=${t}; Path=/api/entries/${eid}; HttpOnly; Secure; SameSite=Lax; Max-Age=3600`);await log('unlock',eid);return ok({success:true})}
   if(e.secret){const t=cookie(req,`rp_grant_${eid}`);if(!t||!await one('SELECT token FROM grants WHERE token=? AND entry_id=? AND expires>?',await digest(t),eid,Date.now()))return new Response(JSON.stringify({error:'비밀 스레드입니다. 비밀번호를 입력해 주세요.',locked:true,title:e.title}),{status:403,headers})}
+  if(p[2]==='anchors'){
+   const number=Number(p[3]);if(e.kind!=='thread'||!/^\d+$/.test(p[3])||!Number.isInteger(number)||number<1||number>1500)fail('앵커 대상을 찾을 수 없습니다.',404);
+   const reply=await one('SELECT hidden,deleted FROM comments WHERE entry_id=? ORDER BY rowid LIMIT 1 OFFSET ?',eid,number-1);
+   if(!reply)fail('레스를 찾을 수 없습니다.',404);
+   return ok({status:reply!.deleted?'deleted':reply!.hidden?'hidden':'visible'});
+  }
   if(p[2]==='editors'){auth();if(!isAdmin&&!isOwner)fail('작성자만 편집 권한을 공유할 수 있습니다.',403);if(method==='GET')return ok(await all('SELECT u.id,u.username FROM editors x JOIN users u ON u.id=x.user_id WHERE x.entry_id=?',eid));if((method==='POST'||method==='DELETE')&&typeof b.userId!=='string')fail('회원을 찾을 수 없습니다.');if(method==='POST'){if(!await one('SELECT id FROM users WHERE id=? AND active=1',b.userId))fail('회원을 찾을 수 없습니다.');await q('INSERT OR IGNORE INTO editors(entry_id,user_id) VALUES(?,?)',eid,b.userId).run();return ok({success:true})}if(method==='DELETE'){await q('DELETE FROM editors WHERE entry_id=? AND user_id=?',eid,b.userId).run();return ok({success:true})}}
   if(p[2]==='comments'){
    if(method==='GET')return ok(await all("SELECT c.id,c.author_id,c.character,CASE WHEN (c.hidden=0 OR (c.entry_id='practice' AND c.author_id=?)) AND c.deleted=0 THEN c.content ELSE '' END content,c.hidden,c.deleted,CASE WHEN (c.hidden=0 OR (c.entry_id='practice' AND c.author_id=?)) AND c.deleted=0 THEN c.dice ELSE NULL END dice,c.created,c.updated,CASE WHEN u.active=1 THEN u.username ELSE '탈퇴 사용자' END author FROM comments c LEFT JOIN users u ON u.id=c.author_id WHERE c.entry_id=? AND (?!='practice' OR c.deleted=0) ORDER BY c.rowid",user?.id||'',user?.id||'',eid,eid));
@@ -158,12 +170,12 @@ async function handle(req:Request){
   }
   if(p[2])fail('요청을 찾을 수 없습니다.',404);
   if(method==='GET'){const {secret,...safe}=e;return ok({...safe,is_secret:!!secret,canEdit:e.kind!=='practice'&&canEdit,canShare:e.kind!=='practice'&&(isAdmin||isOwner),canHide:isAdmin||isOwner,canDeleteComment:isAdmin,pending,canDelete:e.kind!=='practice'&&(isAdmin||(pending&&isOwner))})}
-  if(method==='PATCH'){auth();if(!canEdit||e.kind==='practice')fail('편집 권한이 없습니다.',403);const title=str(b.title,1,120,'제목'),content=str(b.content,1,e.kind==='wiki'?50000:5000,'본문'),cats=Array.isArray(b.categories)?[...new Set(b.categories)]:JSON.parse(e.categories);if(cats.length>3)fail('카테고리는 최대 3개입니다.');if(cats.some((c:unknown)=>typeof c!=='string'))fail('잘못된 카테고리입니다.');for(const c of cats)if(!await one('SELECT id FROM categories WHERE id=?',c))fail('잘못된 카테고리입니다.');if(Object.hasOwn(b,'scheduledAt')&&e.kind==='thread'){
+  if(method==='PATCH'){auth();if(!canEdit||e.kind==='practice')fail('편집 권한이 없습니다.',403);const title=str(b.title,1,120,'제목'),content=str(b.content,1,e.kind==='wiki'?50000:5000,'본문'),cats=Array.isArray(b.categories)?[...new Set(b.categories)]:JSON.parse(e.categories);if(cats.length>3)fail('카테고리는 최대 3개입니다.');if(cats.some((c:unknown)=>typeof c!=='string'))fail('잘못된 카테고리입니다.');for(const c of cats)if(!await one('SELECT id FROM categories WHERE id=?',c))fail('잘못된 카테고리입니다.');const image=Object.hasOwn(b,'coverImage')?coverImage(b.coverImage):e.cover_image;if(Object.hasOwn(b,'scheduledAt')&&e.kind==='thread'){
  if(!pending)fail('공개된 스레드는 다시 예약할 수 없습니다.',409);
  const schedule=scheduleInput(b,!!e.secret);
- const changed=await q('UPDATE entries SET title=?,content=?,categories=?,updated=?,scheduled_at=?,schedule_listed=?,preview_open=?,schedule_meta=? WHERE id=? AND scheduled_at>?',title,content,JSON.stringify(cats),now(),schedule.at,schedule.listed,schedule.open,schedule.meta,eid,now()).run();
+ const changed=await q('UPDATE entries SET title=?,content=?,categories=?,updated=?,scheduled_at=?,schedule_listed=?,preview_open=?,schedule_meta=?,cover_image=? WHERE id=? AND scheduled_at>?',title,content,JSON.stringify(cats),now(),schedule.at,schedule.listed,schedule.open,schedule.meta,image,eid,now()).run();
  if(!changed.meta.changes)fail('이미 공개되었습니다. 새로고침 후 다시 수정해 주세요.',409);
- }else await q('UPDATE entries SET title=?,content=?,categories=?,updated=? WHERE id=?',title,content,JSON.stringify(cats),now(),eid).run();return ok({success:true})}
+ }else await q('UPDATE entries SET title=?,content=?,categories=?,updated=?,cover_image=? WHERE id=?',title,content,JSON.stringify(cats),now(),image,eid).run();return ok({success:true})}
   if(method==='DELETE'){auth();if(e.kind==='practice')fail('연습장은 삭제할 수 없습니다.');if(!isAdmin&&!isOwner)fail('삭제 권한이 없습니다.',403);const result=await q('UPDATE entries SET deleted=1 WHERE id=? AND (?=1 OR scheduled_at>?)',eid,isAdmin?1:0,now()).run();if(!result.meta.changes)fail('공개된 스레드는 관리자만 삭제할 수 있습니다.',403);await log('delete-entry',eid);return ok({success:true})}
  }
  fail('요청을 찾을 수 없습니다.',404);
