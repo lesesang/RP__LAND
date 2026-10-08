@@ -8,20 +8,31 @@ const SITE_CREATOR_PLACEHOLDER_DATABASE_ID =
   "00000000-0000-4000-8000-000000000000";
 
 const { d1, r2 } = hostingConfig;
+const personalDeploy = process.env.RP_DEPLOY_TARGET === "personal";
+const personalDatabaseId = process.env.RP_PERSONAL_D1_ID ?? "";
+const personalAccountId = process.env.CLOUDFLARE_ACCOUNT_ID ?? "";
+if (personalDeploy && !/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(personalDatabaseId)) {
+  throw new Error("RP_PERSONAL_D1_ID must be set to the personal D1 database UUID.");
+}
+if (personalDeploy && !/^[0-9a-f]{32}$/.test(personalAccountId)) {
+  throw new Error("CLOUDFLARE_ACCOUNT_ID must be set to the Cloudflare account ID.");
+}
 
 // macOS Seatbelt blocks FSEvents, so Codex previews need polling for HMR.
 const isCodexSeatbeltSandbox = process.env.CODEX_SANDBOX === "seatbelt";
 const managedLinux = readExecutionProfile() === "managed-linux";
 
 const localBindingConfig = {
+  ...(personalDeploy ? { name: "rp-land", account_id: personalAccountId, workers_dev: true } : {}),
   main: "vinext/server/fetch-handler",
   compatibility_flags: ["nodejs_compat"],
   d1_databases: d1
     ? [
         {
           binding: d1,
-          database_name: "site-creator-d1",
-          database_id: SITE_CREATOR_PLACEHOLDER_DATABASE_ID,
+          database_name: personalDeploy ? "my-db-RP-Land" : "site-creator-d1",
+          database_id: personalDeploy ? personalDatabaseId : SITE_CREATOR_PLACEHOLDER_DATABASE_ID,
+          migrations_dir: "../../drizzle",
         },
       ]
     : [],
@@ -57,7 +68,7 @@ export default defineConfig(async () => {
     },
     plugins: [
       vinext(),
-      sites({ mockAuth: !managedLinux }),
+      sites({ mockAuth: !managedLinux && !personalDeploy }),
       cloudflare({
         viteEnvironment: { name: "rsc", childEnvironments: ["ssr"] },
         inspectorPort: false,
