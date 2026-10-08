@@ -33,4 +33,13 @@ assert.equal((await call('register',{username:'blocked',password:'test-password'
 assert.equal((await call('maintenance/reset',{confirm:'RESET_ALL_RP_LAND'})).status,404);
 assert.equal(sql.prepare('SELECT COUNT(*) n FROM users').get().n,13);
 console.log('PASS real API with isolated SQLite: address isolation, forged headers, signup independence, setup errors, cleanup, disabled reset');
+for(let i=0;i<65;i++)sql.prepare('INSERT INTO audit VALUES(?,?,?,?,?)').run('paging-'+i,null,'hide','test','2099-01-01T00:00:00.000Z');
+const getAudit=async(page,cookie)=>{const r=await api.GET(new Request('https://rp-land.rpland.workers.dev/api/audit?page='+page,{headers:cookie?{Cookie:cookie}:{}}));return {status:r.status,data:await r.json()}};
+assert.equal((await getAudit(1)).status,401);
+const first=await getAudit(1,other.cookie),second=await getAudit(2,other.cookie);
+assert.equal(first.status,200);assert.equal(first.data.entries.length,30);assert.equal(second.data.entries.length,30);
+assert.ok(!first.data.entries.some(a=>second.data.entries.some(b=>a.id===b.id)));
+assert.ok(first.data.total>=65);
+assert.equal((await getAudit(0,other.cookie)).status,400);
+console.log('PASS audit pagination, deterministic page boundaries and anonymous access rejection');
 sql.close();

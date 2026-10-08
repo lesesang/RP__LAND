@@ -142,7 +142,7 @@ async function handle(req:Request){
  await log('delete-category',p[1]);return ok({success:true});
  }
  if(p[0]==='categories'){if(method==='GET')return ok(await all('SELECT * FROM categories ORDER BY name'));admin();if(method==='POST'){const name=str(b.name,1,20,'카테고리');const cid=id();try{await q('INSERT INTO categories(id,name) VALUES(?,?)',cid,name).run()}catch(error){if(duplicate(error,'categories.name'))fail('이미 사용 중인 카테고리 이름입니다.',409);throw error}return ok({id:cid})}if(method==='PATCH'){if(!p[1])fail('카테고리 ID가 필요합니다.');const name=str(b.name,1,20,'카테고리');try{const r=await q('UPDATE categories SET name=? WHERE id=?',name,p[1]).run();if(!r.meta.changes)fail('카테고리를 찾을 수 없습니다.',404)}catch(error){if(duplicate(error,'categories.name'))fail('이미 사용 중인 카테고리 이름입니다.',409);throw error}return ok({success:true})}}
- if(p[0]==='audit'){admin();return ok(await all('SELECT * FROM audit ORDER BY created DESC LIMIT 100'))}
+ if(p[0]==='audit'){admin();if(url.searchParams.has('page')){const page=pageNumber(url);return ok({entries:await all('SELECT * FROM audit ORDER BY created DESC,id DESC LIMIT 30 OFFSET ?',(page-1)*30),total:(await one('SELECT count(*) n FROM audit'))!.n,page})}return ok(await all('SELECT * FROM audit ORDER BY created DESC LIMIT 100'))}
  if(p[0]==='schedule'&&method==='GET'){
  const page=pageNumber(url),mine=url.searchParams.get('mine')==='1';if(mine)auth();
  const stamp=now(),who=user?.id||'',privileged=user&&user.role!=='USER'?1:0;

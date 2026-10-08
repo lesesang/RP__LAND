@@ -113,3 +113,31 @@
  .modal-form{max-height:50dvh}
  .calculator-sidebar{padding-top:16px}
 }
+
+/* Persistent reply composer and immediate thread navigation. */
+html{scroll-padding-bottom:calc(var(--rp-dock-height,0px) + 16px)}
+.thread-dock{position:fixed;z-index:35;bottom:var(--rp-keyboard-offset,0px);left:0;right:0;background:var(--card);border-top:1px solid var(--border);box-shadow:0 -6px 24px #22263512;padding:0 max(16px,env(safe-area-inset-right)) env(safe-area-inset-bottom) max(16px,env(safe-area-inset-left));max-height: min(62dvh,calc(var(--rp-visible-height,100dvh) * .72));display:flex;flex-direction:column}
+.thread-dock-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 0;width:100%;max-width:1050px;margin:auto;flex-shrink:0}
+.thread-dock-heading h2{font-size:16px}
+.thread-dock-body{overflow-y:auto;overscroll-behavior:contain;min-height:0;width:100%;max-width:1050px;margin:auto}
+.thread-dock-body[hidden]{display:none}
+.thread-dock .compose{padding:0 0 12px}
+.thread-dock .field{margin-bottom:8px}
+.thread-dock .field input{padding:6px 10px}
+.thread-dock .compose textarea{min-height:88px;height:100px;max-height:35dvh}
+.thread-dock .toolbar{padding:4px}
+.thread-dock .compose-bottom{margin-top:6px}
+.thread-dock .manual-refresh{margin-top:8px;padding-top:8px}
+.thread-jump{position:fixed;z-index:36;right:max(12px,env(safe-area-inset-right));bottom:calc(var(--rp-dock-height,0px) + var(--rp-keyboard-offset,0px) + 12px);display:flex;flex-direction:column;gap:6px}
+.thread-jump .btn{width:44px;height:44px;padding:0;border-color:#c9c3e6;box-shadow:0 2px 8px #22263518}
+@media(max-width:760px){.thread-dock{padding-left:12px;padding-right:12px}.thread-dock-heading h2{font-size:15px}.thread-dock-heading .btn{min-height:36px;padding:6px 10px}.thread-jump{right:8px;gap:4px}.thread-dock .compose textarea{min-height:80px;height:88px}}
+
+/* Secondary management controls stay compact; primary submit buttons remain prominent. */
+.article>.actions .btn,.comment .actions .btn,.comment-top .btn,.user-row .actions .btn,.uncategorized-row>.btn{font-size:13px;padding:4px 9px;min-height:30px;gap:5px;border-radius:6px}
+.toolbar .image-host-link{display:inline-flex;align-items:center;min-height:36px;padding:5px 10px;border-radius:4px;font-size:14px;color:var(--primary)}
+.toolbar .image-host-link:hover{background:var(--secondary)}
+.activity-row{padding:14px 0;border-bottom:1px solid var(--border);overflow-wrap:anywhere}
+.activity-row>div{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.activity-row summary{font-size:13px;color:var(--muted-foreground);cursor:pointer;margin-top:4px}
+.activity-row details p{font-size:13px;margin:6px 0}
+@media(pointer:coarse){.article>.actions .btn,.comment .actions .btn,.comment-top .btn,.user-row .actions .btn,.uncategorized-row>.btn{min-height:34px}.toolbar .image-host-link{min-height:40px}}
