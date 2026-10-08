@@ -159,3 +159,21 @@ html{scroll-padding-bottom:calc(var(--rp-dock-height,0px) + 16px)}
 .thread-dock .editor-tools[open]{margin-bottom:4px}
 @media(max-width:760px){.thread-dock{max-height:min(250px,36dvh,calc(var(--rp-visible-height,100dvh) * .45))}.thread-dock .compose textarea{height:54px;min-height:48px}.thread-dock-heading .btn{min-height:30px}.thread-dock .compose-bottom .btn{min-height:34px}}
 @media(max-height:500px){.thread-dock{max-height:min(200px,40dvh,calc(var(--rp-visible-height,100dvh) * .45))}.thread-dock .compose textarea{height:48px;min-height:40px}}
+
+/* Resize the reply dock without consuming the whole reading area. */
+.dock-resize{height:16px;flex:0 0 16px;display:flex;align-items:center;justify-content:center;cursor:ns-resize;touch-action:none;user-select:none}
+.dock-resize span{width:44px;height:3px;border-radius:3px;background:#b3abc9}
+.dock-resize:hover span,.dock-resize:focus-visible span{background:var(--primary)}
+.dock-resize:focus-visible{outline:2px solid var(--ring);outline-offset:-2px}
+.thread-dock[data-sized]{max-height:min(460px,55dvh,calc(var(--rp-visible-height,100dvh) * .55))}
+.thread-dock[data-sized] .thread-dock-body{flex:1;display:flex;flex-direction:column}
+.thread-dock[data-sized] .compose{flex:1;display:flex;flex-direction:column}
+.thread-dock[data-sized] .compose>textarea{flex:1;max-height:none;resize:none}
+.thread-dock[data-sized] .compose>details,.thread-dock[data-sized] .editor-count,.thread-dock[data-sized] .compose-bottom{flex-shrink:0}
+.thread-dock-heading h2{margin-right:auto}
+.thread-dock .toolbar{gap:2px;padding:3px}
+.thread-dock .toolbar button,.thread-dock .toolbar .image-host-link{font-size:13px;min-height:28px;padding:3px 6px;gap:3px}
+.thread-dock .toolbar svg{width:14px;height:14px}
+.thread-dock .toolbar .ruby-input{width:72px;min-height:28px;padding:3px 6px;font-size:14px}
+.thread-dock .color-picker input{width:24px;height:24px}
+@media(pointer:coarse){.dock-resize{height:22px;flex-basis:22px}.thread-dock .toolbar button,.thread-dock .toolbar .image-host-link{min-height:32px}.thread-dock .toolbar .ruby-input{min-height:32px;font-size:16px}}
