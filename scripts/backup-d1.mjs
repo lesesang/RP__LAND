@@ -1,0 +1,14 @@
+import {readFileSync,mkdirSync,existsSync} from 'node:fs';
+import {resolve} from 'node:path';
+import {spawnSync} from 'node:child_process';
+const configPath=resolve('dist/server/wrangler.json');
+if(!existsSync(configPath))throw new Error('Run pnpm run build before backing up.');
+const config=JSON.parse(readFileSync(configPath,'utf8'));
+const db=config.d1_databases?.find(d=>d.binding==='DB');
+if(config.name!=='rp-land'||config.account_id!=='c7968b6871f33603b8f201fbfe66f877'||db?.database_id!=='0c2063d5-ddfe-4d46-a6c9-269417d63a27')throw new Error('Backup target does not match the production RP LAND database.');
+mkdirSync('.backups',{recursive:true});
+const output=resolve('.backups',`rp-land-${new Date().toISOString().replace(/[:.]/g,'-')}.sql`);
+const result=spawnSync(process.execPath,['./node_modules/wrangler/bin/wrangler.js','d1','export','DB','--remote','--config',configPath,'--output',output],{stdio:'inherit'});
+if(result.error)throw result.error;
+if(result.status!==0)process.exit(result.status||1);
+console.log(`Backup saved: ${output}`);

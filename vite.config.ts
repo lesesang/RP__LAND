@@ -1,20 +1,17 @@
 import vinext from "vinext";
 import { defineConfig } from "vite";
-import hostingConfig from "./.openai/hosting.json";
 import { readExecutionProfile } from "./scripts/execution-profile.mjs";
-import { sites } from "./build/sites-vite-plugin";
 
-const SITE_CREATOR_PLACEHOLDER_DATABASE_ID =
-  "00000000-0000-4000-8000-000000000000";
-
-const { d1, r2 } = hostingConfig;
-const personalDeploy = process.env.RP_DEPLOY_TARGET === "personal";
-const personalDatabaseId = process.env.RP_PERSONAL_D1_ID ?? "";
-const personalAccountId = process.env.CLOUDFLARE_ACCOUNT_ID ?? "";
-if (personalDeploy && !/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(personalDatabaseId)) {
+// Public identifiers, never credentials. Personal Cloudflare is the only deployment target.
+if (process.env.RP_DEPLOY_TARGET && process.env.RP_DEPLOY_TARGET !== "personal") {
+  throw new Error("This repository deploys to the personal RP LAND Worker only.");
+}
+const personalDatabaseId = process.env.RP_PERSONAL_D1_ID ?? "0c2063d5-ddfe-4d46-a6c9-269417d63a27";
+const personalAccountId = process.env.CLOUDFLARE_ACCOUNT_ID ?? "c7968b6871f33603b8f201fbfe66f877";
+if (!/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(personalDatabaseId)) {
   throw new Error("RP_PERSONAL_D1_ID must be set to the personal D1 database UUID.");
 }
-if (personalDeploy && !/^[0-9a-f]{32}$/.test(personalAccountId)) {
+if (!/^[0-9a-f]{32}$/.test(personalAccountId)) {
   throw new Error("CLOUDFLARE_ACCOUNT_ID must be set to the Cloudflare account ID.");
 }
 
@@ -23,27 +20,14 @@ const isCodexSeatbeltSandbox = process.env.CODEX_SANDBOX === "seatbelt";
 const managedLinux = readExecutionProfile() === "managed-linux";
 
 const localBindingConfig = {
-  ...(personalDeploy ? { name: "rp-land", account_id: personalAccountId, workers_dev: true } : {}),
+  name: "rp-land", account_id: personalAccountId, workers_dev: true,
   main: "vinext/server/fetch-handler",
   compatibility_flags: ["nodejs_compat"],
-  d1_databases: d1
-    ? [
-        {
-          binding: d1,
-          database_name: personalDeploy ? "rp-land" : "site-creator-d1",
-          database_id: personalDeploy ? personalDatabaseId : SITE_CREATOR_PLACEHOLDER_DATABASE_ID,
-          migrations_dir: "../../drizzle",
-        },
-      ]
-    : [],
-  r2_buckets: r2
-    ? [
-        {
-          binding: r2,
-          bucket_name: "site-creator-r2",
-        },
-      ]
-    : [],
+  d1_databases: [{
+    binding: "DB", database_name: "rp-land", database_id: personalDatabaseId,
+    migrations_dir: "../../drizzle",
+  }],
+
 };
 
 export default defineConfig(async () => {
@@ -68,7 +52,6 @@ export default defineConfig(async () => {
     },
     plugins: [
       vinext(),
-      sites({ mockAuth: !managedLinux && !personalDeploy }),
       cloudflare({
         viteEnvironment: { name: "rsc", childEnvironments: ["ssr"] },
         inspectorPort: false,

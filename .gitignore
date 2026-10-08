@@ -46,3 +46,6 @@ next-env.d.ts
 /work/
 
 *.tsbuildinfo
+
+# Database exports contain private account and post data.
+/.backups/

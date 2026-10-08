@@ -1,6 +1,6 @@
 # RP LAND 개인 Cloudflare D1 배포
 
-2026-10-08 현재 저장소 설정 기준입니다. 기존 Sites 사이트와 그 D1은 유지되고, 아래 작업은 별도 `rp-land` Worker와 개인 D1을 만듭니다. 개인 Worker는 `workers.dev` 주소를 사용합니다.
+2026-10-08 현재 운영 대상은 개인 Cloudflare의 `rp-land` Worker와 D1입니다. 예전 Sites 사이트는 삭제되었으며 이 저장소의 기본 빌드는 개인 Worker를 대상으로 합니다.
 
 ## 준비 상태
 
@@ -8,7 +8,7 @@
 - D1 이름: `rp-land`
 - D1 ID: `0c2063d5-ddfe-4d46-a6c9-269417d63a27`
 - 기존 RP LAND 자료는 최근 초기화되어 새 D1에는 옮길 계정/게시물이 없습니다.
-- 이 저장소는 `RP_DEPLOY_TARGET=personal`일 때에만 위 D1과 계정 ID를 개인 Worker 설정에 반영합니다. 기본 Sites 빌드는 계속 기존 Sites 연결을 사용합니다.
+- 환경변수를 지정하지 않아도 위 개인 D1과 계정 ID로 빌드합니다. 예전 Sites 대상으로의 빌드는 차단됩니다.
 - RP LAND에는 자체 ID/비밀번호 로그인이 있으므로 ChatGPT 전용 로그인에 의존하지 않습니다.
 
 ## 1. 저장소를 Windows에 받기
@@ -89,10 +89,26 @@ pnpm exec wrangler secret put ADMIN_SETUP_TOKEN --config .\dist\server\wrangler.
 - `pnpm run build`를 다시 하면 `dist/`가 갱신됩니다. 개인 대상 변수 세 개를 같은 PowerShell 창에 유지하세요.
 - 현재 Workers 배포는 RP LAND 서버와 D1만 옮깁니다. 사용자 정의 도메인, 기존 Sites 주소, 접근 정책은 자동 이전되지 않습니다.
 - 개인 Worker로 옮기면 계정과 게시물은 이제 본인 Cloudflare D1에 저장됩니다. 배포 후 주소와 로그인/스레드 저장을 직접 확인한 뒤 이용자에게 새 주소를 공유하세요.
-- `RESET_TOKEN`은 설정하지 마세요. 실제 전체 데이터 초기화를 위한 비밀값이며 개인 운영에는 필요 없습니다.
+- 공개 초기화 API는 제거되어 `RESET_TOKEN`은 더 이상 사용하지 않습니다.
 
 ## Cloudflare 공식 안내
 
 - [D1 만들기 및 Worker에 연결](https://developers.cloudflare.com/d1/get-started/)
 - [마이그레이션](https://developers.cloudflare.com/d1/reference/migrations/)
 - [내보내기와 가져오기](https://developers.cloudflare.com/d1/best-practices/import-export-data/)
+
+
+## 일상 업데이트와 백업
+
+기본 운영 대상이 저장소에 지정되어 있어 새 PowerShell 창에서도 다음 명령으로 업데이트합니다.
+
+```powershell
+git pull
+pnpm run build
+pnpm db:backup
+pnpm exec wrangler deploy --config .\dist\server\wrangler.json
+```
+
+백업은 현재 로그인한 Cloudflare 계정으로 운영 D1을 SQL 파일로 내보냅니다. `.backups` 폴더는 Git에서 제외됩니다. 백업 파일에는 계정 해시와 비공개 글도 포함되므로 공개하거나 GitHub에 올리지 마세요. 별도의 안전한 위치에 복사해서 보관하세요. 자동 백업 스케줄은 생성하지 않습니다. 복원은 덮어쓰기 위험이 있으므로 자동 실행하지 않습니다.
+
+2026-10-08 인증 제한 개선에는 DB 마이그레이션이 필요 없습니다. 공개 HTTP 초기화 API는 제거했습니다. 가입은 접속 주소별 15분 20회, 로그인과 비밀 스레드 인증은 접속 주소 전체 100회 및 주소·대상별 20회로 제한합니다. 같은 공유기나 프록시를 사용하는 이용자는 주소별 제한을 공유할 수 있습니다. 분산 공격 방어를 완전히 대체하지는 않습니다.

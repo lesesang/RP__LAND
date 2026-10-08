@@ -1,5 +1,7 @@
 import {rollDice} from '@/lib/roleplay';
 import {database} from '@/db/raw';
+import {clientAddress,credentialLimitKey} from '@/lib/request-limits';
+let nextCleanup=0;
 type Row=Record<string,any>;
 const now=()=>new Date().toISOString(),id=()=>crypto.randomUUID();
 const fail=(message:string,status=400)=>{throw Object.assign(new Error(message),{status})};
@@ -67,7 +69,7 @@ async function readJson(req:Request):Promise<Row>{
 function checkRoute(p:string[],method:string){
  let allowed:string[]|undefined;
  if(p.length===1){allowed=({me:['GET','PATCH','DELETE'],names:['DELETE'],register:['POST'],login:['POST'],logout:['POST'],setup:['POST'],audit:['GET'],uncategorized:['GET'],schedule:['GET'],users:['GET','PATCH','DELETE'],categories:['GET','POST','PATCH'],entries:['GET','POST','PATCH','DELETE']} as Record<string,string[]>)[p[0]]}
- else if(p.length===2){if(p[0]==='maintenance'&&p[1]==='reset')allowed=['POST'];else if(p[0]==='entries')allowed=['GET','PATCH','DELETE'];else if(p[0]==='users')allowed=['GET','PATCH','DELETE'];else if(p[0]==='categories')allowed=['GET','PATCH','DELETE']}
+ else if(p.length===2){if(p[0]==='entries')allowed=['GET','PATCH','DELETE'];else if(p[0]==='users')allowed=['GET','PATCH','DELETE'];else if(p[0]==='categories')allowed=['GET','PATCH','DELETE']}
  else if(p.length===3&&p[0]==='entries'){allowed=({categories:['PATCH'],comments:['GET','POST','PATCH','DELETE'],editors:['GET','POST','DELETE'],unlock:['POST']} as Record<string,string[]>)[p[2]]}
  else if(p.length===4&&p[0]==='entries'&&p[2]==='anchors')allowed=['GET'];
  else if(p.length===4&&p[0]==='entries'&&p[2]==='comments')allowed=['PATCH','DELETE'];
@@ -87,13 +89,14 @@ async function handle(req:Request){
  const auth=()=>{if(!user)fail('로그인이 필요합니다.',401);return user!};const admin=()=>{auth();if(!['SUPER','SUB'].includes(user!.role))fail('관리자 권한이 필요합니다.',403)};
  const log=async(action:string,target:string)=>q('INSERT INTO audit(id,actor,action,target,created) VALUES(?,?,?,?,?)',id(),user?.id||null,action,target,now()).run();
 
- if(p[0]==='maintenance'&&p[1]==='reset'&&method==='POST'){
- const {env}=await import('cloudflare:workers');const key=(env as unknown as Record<string,string>).RESET_TOKEN;
- if(!key||req.headers.get('authorization')!==`Bearer ${key}`||b.confirm!=='RESET_ALL_RP_LAND')fail('허용되지 않은 요청입니다.',403);
- const marker='reset-2026-10-08-launch';if(await one('SELECT id FROM maintenance WHERE id=?',marker))fail('이미 초기화했습니다.',409);
- const tables=['sessions','grants','editors','names','comments','entries','categories','audit','attempts','users'];
- await db.batch([...tables.map(t=>q(`DELETE FROM ${t} WHERE NOT EXISTS(SELECT 1 FROM maintenance WHERE id=?)`,marker)),q('INSERT OR IGNORE INTO maintenance(id) VALUES(?)',marker)]);
- return ok({success:true,counts:Object.fromEntries(await Promise.all(tables.map(async t=>[t,(await one(`SELECT count(*) n FROM ${t}`))!.n])))})
+ // Opportunistic bounded cleanup; no public reset endpoint in production.
+ if(method!=='GET'&&Date.now()>nextCleanup){
+  nextCleanup=Date.now()+900000;
+  try{await db.batch([
+   q('DELETE FROM sessions WHERE token IN (SELECT token FROM sessions WHERE expires<=? LIMIT 100)',Date.now()),
+   q('DELETE FROM grants WHERE token IN (SELECT token FROM grants WHERE expires<=? LIMIT 100)',Date.now()),
+   q('DELETE FROM attempts WHERE key IN (SELECT key FROM attempts WHERE expires<=? LIMIT 100)',Date.now()),
+  ])}catch{nextCleanup=Date.now()+60000;console.error('Expired credential cleanup failed')}
  }
  const rate=async(key:string,limit=20)=>{const stamp=Date.now(),k=await digest(key);const row=await q('INSERT INTO attempts(key,count,expires) VALUES(?,1,?) ON CONFLICT(key) DO UPDATE SET count=CASE WHEN expires<=? THEN 1 ELSE count+1 END,expires=CASE WHEN expires<=? THEN excluded.expires ELSE expires END RETURNING count,expires',k,stamp+900000,stamp,stamp).first<Row>();if(row!.count>limit){headers.set('Retry-After',String(Math.max(1,Math.ceil((row!.expires-stamp)/1000))));fail('시도 횟수가 많습니다. 15분 후 다시 시도해 주세요.',429)}};
  // Limit account-owned mutations without blocking reads or logout.
@@ -122,10 +125,10 @@ async function handle(req:Request){
  await log('update-account',user!.id);return ok({success:true,reauthenticate:true});
  }
  if(p[0]==='me'){if(method==='DELETE'){auth();await rate('withdraw:'+user!.id);if(user!.role==='SUPER')fail('총관리자 계정은 탈퇴할 수 없습니다.');if(!await verify(b.password,(await one('SELECT password FROM users WHERE id=?',user!.id))!.password))fail('비밀번호가 일치하지 않습니다.',401);await db.batch([q('UPDATE users SET active=0,password=?,username=? WHERE id=?','',`deleted-${user!.id}`,user!.id),q('DELETE FROM sessions WHERE user_id=?',user!.id),q('DELETE FROM names WHERE user_id=?',user!.id)]);await log('withdraw',user!.id);return ok({success:true})}return ok({user,names:user?await all('SELECT name FROM names WHERE user_id=?',user.id):[],setup:!(await one("SELECT id FROM users WHERE role='SUPER' LIMIT 1"))})}
- if(p[0]==='register'&&method==='POST'){const username=str(b.username,3,30,'아이디');if(!/^[a-zA-Z0-9가-힣_-]+$/.test(username))fail('아이디에는 문자, 숫자, 밑줄, 하이픈만 사용할 수 있습니다.');const password=passwordValue(b.password,8,'비밀번호');await rate('register:'+username.toLowerCase());const visitor=req.headers.get('oai-authenticated-user-id');await rate('signup-visitor:'+(visitor||'unattributed'),10);await rate('signup-global',60);await q('DELETE FROM attempts WHERE expires<=?',Date.now()).run();const uid=id();const hp=await hash(password);try{const created=await q('INSERT INTO users(id,username,password,role,created) SELECT ?,?,?,?,? WHERE NOT EXISTS(SELECT 1 FROM users WHERE lower(username)=lower(?))',uid,username,hp,'USER',now(),username).run();if(!created.meta.changes)fail('이미 사용 중인 아이디입니다. 대소문자는 구분하지 않습니다.',409)}catch(error){if(duplicate(error,'users.username'))fail('이미 사용 중인 아이디입니다.',409);throw error}return ok({success:true})}
- if(p[0]==='login'&&method==='POST'){const username=str(b.username,1,30,'아이디');const visitor=req.headers.get('oai-authenticated-user-id');if(visitor)await rate('login-visitor:'+visitor,100);await rate('login:'+username.toLowerCase());let u=await one('SELECT * FROM users WHERE username=? AND active=1',username);if(!u){const matches=await all('SELECT * FROM users WHERE lower(username)=lower(?) AND active=1 LIMIT 2',username);if(matches.length===1)u=matches[0]}if(!u||!await verify(b.password,u.password))fail('아이디 또는 비밀번호가 일치하지 않습니다.',401);const t=id()+id();await q('INSERT INTO sessions(token,user_id,expires) VALUES(?,?,?)',await digest(t),u!.id,Date.now()+7*86400000).run();headers.append('Set-Cookie',`rp_session=${t}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=604800`);return ok({success:true})}
+ if(p[0]==='register'&&method==='POST'){const username=str(b.username,3,30,'아이디');if(!/^[a-zA-Z0-9가-힣_-]+$/.test(username))fail('아이디에는 문자, 숫자, 밑줄, 하이픈만 사용할 수 있습니다.');const password=passwordValue(b.password,8,'비밀번호');await rate('signup-address:'+clientAddress(req),20);const uid=id();const hp=await hash(password);try{const created=await q('INSERT INTO users(id,username,password,role,created) SELECT ?,?,?,?,? WHERE NOT EXISTS(SELECT 1 FROM users WHERE lower(username)=lower(?))',uid,username,hp,'USER',now(),username).run();if(!created.meta.changes)fail('이미 사용 중인 아이디입니다. 대소문자는 구분하지 않습니다.',409)}catch(error){if(duplicate(error,'users.username'))fail('이미 사용 중인 아이디입니다.',409);throw error}return ok({success:true})}
+ if(p[0]==='login'&&method==='POST'){const username=str(b.username,1,30,'아이디');const address=clientAddress(req);await rate('login-address:'+address,100);await rate(credentialLimitKey('login',address,username));let u=await one('SELECT * FROM users WHERE username=? AND active=1',username);if(!u){const matches=await all('SELECT * FROM users WHERE lower(username)=lower(?) AND active=1 LIMIT 2',username);if(matches.length===1)u=matches[0]}if(!u||!await verify(b.password,u.password))fail('아이디 또는 비밀번호가 일치하지 않습니다.',401);const t=id()+id();await q('INSERT INTO sessions(token,user_id,expires) VALUES(?,?,?)',await digest(t),u!.id,Date.now()+7*86400000).run();headers.append('Set-Cookie',`rp_session=${t}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=604800`);return ok({success:true})}
  if(p[0]==='logout'&&method==='POST'){if(token)await q('DELETE FROM sessions WHERE token=?',await digest(token)).run();headers.append('Set-Cookie','rp_session=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0');return ok({success:true})}
- if(p[0]==='setup'&&method==='POST'){auth();await rate('setup:'+user!.id);const {env}=await import('cloudflare:workers');const setupToken=(env as unknown as Record<string,string>).ADMIN_SETUP_TOKEN;if(!setupToken||!await digest(String(b.token||'')).then(x=>digest(setupToken).then(y=>x===y)))fail('운영자 설정 키를 확인해 주세요.',403);const r=await q("UPDATE users SET role='SUPER' WHERE id=? AND NOT EXISTS(SELECT 1 FROM users WHERE role='SUPER')",user!.id).run();if(!r.meta.changes)fail('이미 총관리자가 지정되었습니다.',409);await log('setup',user!.id);return ok({success:true})}
+ if(p[0]==='setup'&&method==='POST'){auth();await rate('setup:'+user!.id);const {env}=await import('cloudflare:workers');const setupToken=(env as unknown as Record<string,string>).ADMIN_SETUP_TOKEN;if(!setupToken)fail('서버에 총관리자 설정 키가 등록되지 않았습니다. 운영자가 ADMIN_SETUP_TOKEN을 설정해야 합니다.',503);if(!await digest(String(b.token||'')).then(x=>digest(setupToken).then(y=>x===y)))fail('운영자 설정 키를 확인해 주세요.',403);const r=await q("UPDATE users SET role='SUPER' WHERE id=? AND NOT EXISTS(SELECT 1 FROM users WHERE role='SUPER')",user!.id).run();if(!r.meta.changes)fail('이미 총관리자가 지정되었습니다.',409);await log('setup',user!.id);return ok({success:true})}
  if(p[0]==='users'){if(method==='GET')return ok(await all("SELECT id,CASE WHEN active=1 THEN username ELSE '탈퇴 사용자' END username,role,active FROM users ORDER BY created"));if(p[1]){auth();if(user!.role!=='SUPER')fail('총관리자만 변경할 수 있습니다.',403);if(p[1]===user!.id)fail('자기 계정의 권한은 변경할 수 없습니다.');if(method==='PATCH'){if(!['USER','SUB'].includes(b.role))fail('잘못된 역할입니다.');const r=await q("UPDATE users SET role=? WHERE id=? AND role!='SUPER' AND active=1",b.role,p[1]).run();if(!r.meta.changes)fail('대상을 찾을 수 없습니다.',404);await log('role:'+b.role,p[1]);return ok({success:true})}if(method==='DELETE'){const [deactivated]=await db.batch([q("UPDATE users SET active=0,password='',username=? WHERE id=? AND role!='SUPER' AND active=1",`deleted-${p[1]}`,p[1]),q('DELETE FROM sessions WHERE user_id=?',p[1]),q('DELETE FROM names WHERE user_id=?',p[1])]);if(!deactivated.meta.changes)fail('대상을 찾을 수 없습니다.',404);await log('deactivate',p[1]);return ok({success:true})}}}
  if(p[0]==='uncategorized'){
  auth();if(user!.role!=='SUPER')fail('총관리자 권한이 필요합니다.',403);
@@ -168,7 +171,7 @@ async function handle(req:Request){
  }
   const pending=e.kind==='thread'&&!!e.scheduled_at&&e.scheduled_at>now();
   if(pending&&!e.preview_open&&!canEdit)fail('아직 공개되지 않은 예약 스레드입니다.',404);
-  if(p[2]==='unlock'&&method==='POST'){await rate('secret:'+eid);if(!e.secret||!await verify(b.password,e.secret))fail('비밀번호가 일치하지 않습니다.',401);const t=id()+id();await q('INSERT INTO grants(token,entry_id,expires) VALUES(?,?,?)',await digest(t),eid,Date.now()+3600000).run();headers.append('Set-Cookie',`rp_grant_${eid}=${t}; Path=/api/entries/${eid}; HttpOnly; Secure; SameSite=Lax; Max-Age=3600`);await log('unlock',eid);return ok({success:true})}
+  if(p[2]==='unlock'&&method==='POST'){const address=clientAddress(req);await rate('unlock-address:'+address,100);await rate(credentialLimitKey('secret',address,eid));if(!e.secret||!await verify(b.password,e.secret))fail('비밀번호가 일치하지 않습니다.',401);const t=id()+id();await q('INSERT INTO grants(token,entry_id,expires) VALUES(?,?,?)',await digest(t),eid,Date.now()+3600000).run();headers.append('Set-Cookie',`rp_grant_${eid}=${t}; Path=/api/entries/${eid}; HttpOnly; Secure; SameSite=Lax; Max-Age=3600`);await log('unlock',eid);return ok({success:true})}
   if(e.secret){const t=cookie(req,`rp_grant_${eid}`);if(!t||!await one('SELECT token FROM grants WHERE token=? AND entry_id=? AND expires>?',await digest(t),eid,Date.now()))return new Response(JSON.stringify({error:'비밀 스레드입니다. 비밀번호를 입력해 주세요.',locked:true,title:e.title}),{status:403,headers})}
   if(p[2]==='anchors'){
    const number=Number(p[3]);if(e.kind!=='thread'||!/^\d+$/.test(p[3])||!Number.isInteger(number)||number<1||number>1500)fail('앵커 대상을 찾을 수 없습니다.',404);
