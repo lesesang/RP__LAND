@@ -1,76 +1,71 @@
-# RP LAND 개인 Cloudflare D1 배포
+# RP LAND 운영 안내
 
-2026-10-08 현재 운영 대상은 개인 Cloudflare의 `rp-land` Worker와 D1입니다. 예전 Sites 사이트는 삭제되었으며 이 저장소의 기본 빌드는 개인 Worker를 대상으로 합니다.
+운영 사이트: https://rp-land.rpland.workers.dev
 
-## 준비 상태
+이미 운영 중인 사이트를 업데이트하려면 **1번**만 따르면 됩니다. 명령은 PowerShell에서 한 줄씩 실행하고, 오류가 나면 다음 단계로 넘어가지 마세요.
 
-- 계정: Cloudflare 계정 `c7968b6871f33603b8f201fbfe66f877`
-- D1 이름: `rp-land`
-- D1 ID: `0c2063d5-ddfe-4d46-a6c9-269417d63a27`
-- 기존 RP LAND 자료는 최근 초기화되어 새 D1에는 옮길 계정/게시물이 없습니다.
-- 환경변수를 지정하지 않아도 위 개인 D1과 계정 ID로 빌드합니다. 예전 Sites 대상으로의 빌드는 차단됩니다.
-- RP LAND에는 자체 ID/비밀번호 로그인이 있으므로 ChatGPT 전용 로그인에 의존하지 않습니다.
-
-## 1. 저장소를 Windows에 받기
-
-PowerShell에서 쓰기 가능한 폴더로 이동합니다. PowerShell은 CMD와 달리 `%USERPROFILE%`/`cd /d` 문법을 쓰지 않습니다.
+## 1. 업데이트와 백업
 
 ```powershell
-Set-Location "$HOME\Documents"
-git clone https://github.com/lesesang/RP__LAND.git
-Set-Location .\RP__LAND
-```
-
-저장소가 이미 있다면 `git pull`로 최신 변경을 받습니다. Node.js 22.13 이상과 pnpm이 필요합니다.
-
-## 2. 개인 Worker 빌드 및 DB 구조 적용
-
-아래 값을 현재 PowerShell 창에 설정합니다. 이 값은 비밀 토큰이 아닙니다.
-
-```powershell
-$env:RP_DEPLOY_TARGET = "personal"
-$env:RP_PERSONAL_D1_ID = "0c2063d5-ddfe-4d46-a6c9-269417d63a27"
-$env:CLOUDFLARE_ACCOUNT_ID = "c7968b6871f33603b8f201fbfe66f877"
+Set-Location "$HOME\Documents\RP__LAND"
+git pull
 pnpm install --frozen-lockfile
 pnpm run build
+pnpm db:backup
+pnpm exec wrangler deploy --config .\dist\server\wrangler.json
 ```
 
-`wrangler whoami`가 해당 계정으로 로그인되어 있어야 합니다. 앞서 `whoami`는 성공했지만 D1 API가 `Authentication error [code: 10000]`를 반환했습니다. 대시보드에서 D1이 이미 만들어졌으니 중복 생성하지 마세요. OAuth 오류가 계속되면 Cloudflare 대시보드의 **My Profile → API Tokens**에서 계정 범위를 `c7968b6871f33603b8f201fbfe66f877`로 제한한 토큰을 만드세요. D1 마이그레이션과 새 Worker 배포에 필요한 `D1:Edit`과 Workers Admin 권한을 부여합니다. 토큰은 PowerShell의 현재 세션에만 잠깐 설정하며 GitHub나 채팅에 붙여 넣지 않습니다.
+빌드에는 개인 Cloudflare 연결 설정이 기본으로 적용됩니다. 매번 환경변수를 입력할 필요는 없습니다. 배포 마지막에 사이트 주소와 `Current Version ID`가 나오면 새 버전이 배포된 것입니다. 사이트를 새로고침해서 확인하세요.
 
-PowerShell에서 토큰을 가려서 입력하려면:
-
-```powershell
-$secureToken = Read-Host "Cloudflare API token" -AsSecureString
-$tokenPointer = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($secureToken)
-try {
-  $env:CLOUDFLARE_API_TOKEN = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($tokenPointer)
-} finally {
-  [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($tokenPointer)
-}
-```
-
-배포와 secret 등록이 끝나면 환경변수를 지웁니다.
-
-```powershell
-Remove-Item Env:\CLOUDFLARE_API_TOKEN
-$secureToken.Dispose()
-```
-
-빌드가 끝난 뒤 D1에 빈 스키마를 적용합니다.
+DB 구조를 바꾸는 업데이트에서만, 변경 안내에 따라 백업 후 배포 전에 아래 명령을 실행합니다.
 
 ```powershell
 pnpm exec wrangler d1 migrations apply DB --remote --config .\dist\server\wrangler.json
 ```
 
-Cloudflare 안내에 나온 바인딩은 `rp_land`였지만, 앱은 `DB`라는 이름으로 DB를 읽습니다. 저장소 설정이 `DB` 바인딩과 `rp-land` D1을 연결하므로 별도 설정을 추가할 필요가 없습니다. `drizzle/` 마이그레이션도 포함되며, 마이그레이션은 순서대로 적용됩니다.
+### 백업 보관
 
-## 3. Worker 배포와 총관리자 키 설정
+`pnpm db:backup`은 운영 D1을 PC의 `.backups` 폴더에 날짜가 붙은 SQL 파일로 저장합니다. 내보내는 동안 DB 조회가 일시 중단될 수 있으므로 이용이 적은 시간에 실행하세요.
+
+백업에는 계정 해시와 비공개 글도 포함됩니다. 파일과 로그의 임시 다운로드 링크를 공개하지 마세요. `.backups`는 Git에서 제외되며, 안전한 별도 위치에도 복사해 두는 것이 좋습니다. 자동 백업이나 자동 복원은 설정되어 있지 않습니다.
+
+## 2. 새 PC에서 준비하기
+
+Git과 Node.js 22.13 이상을 설치한 뒤 실행합니다.
 
 ```powershell
-pnpm exec wrangler deploy --config .\dist\server\wrangler.json
+npm install --global pnpm@11.25.0
+Set-Location "$HOME\Documents"
+git clone https://github.com/lesesang/RP__LAND.git
+Set-Location .\RP__LAND
+pnpm install --frozen-lockfile
+pnpm exec wrangler login
+pnpm exec wrangler whoami
 ```
 
-배포가 끝나면 초기 총관리자 설정 키를 만들고 Worker 비밀값으로 등록합니다. 다음 PowerShell 명령은 256비트 임의 키를 만들어 화면에 한 번 보여 줍니다. 키를 안전한 곳에 잠시 복사해 둔 뒤 명령이 요청할 때 입력하세요.
+브라우저에서 운영 Cloudflare 계정으로 로그인하고 Wrangler 접근을 허용합니다. 저장소 폴더가 이미 있다면 복제하지 말고 그 폴더에서 `git pull`을 실행하세요. 준비가 끝나면 1번 순서로 업데이트합니다.
+
+## 3. 연결 대상
+
+| 항목 | 값 |
+| --- | --- |
+| Worker | `rp-land` |
+| Cloudflare 계정 ID | `c7968b6871f33603b8f201fbfe66f877` |
+| D1 이름 | `rp-land` |
+| D1 ID | `0c2063d5-ddfe-4d46-a6c9-269417d63a27` |
+| 코드에서 사용하는 DB 이름 | `DB` |
+
+이 값들은 비밀번호나 API 토큰이 아닌 리소스 식별자입니다. 실제 계정과 게시글은 위 D1에 저장됩니다. GitHub 업데이트와 재배포는 데이터를 초기화하지 않습니다.
+
+`vite.config.ts`가 연결 설정을 만들고, 빌드 결과는 `dist/server/wrangler.json`에 기록됩니다. `dist` 파일을 직접 수정하면 다음 빌드에서 덮어써집니다. 다른 계정·DB로 이전할 때만 `CLOUDFLARE_ACCOUNT_ID`, `RP_PERSONAL_D1_ID`를 바꿔 빌드하세요. 백업 명령은 위 운영 대상만 허용하므로 이전 시 백업 스크립트의 대상 검사도 함께 변경해야 합니다.
+
+## 4. 최초 총관리자 지정
+
+**총관리자가 아직 없는 경우에만 필요합니다.** 일반 업데이트 때 다시 설정하지 않습니다.
+
+1. 사이트에서 사용할 계정으로 가입하고 로그인합니다.
+2. 아래 명령으로 설정 키를 만들고 Worker에 등록합니다.
+3. 사이트의 **내 계정 → 총관리자 설정**에 같은 키를 입력합니다.
 
 ```powershell
 $bytes = New-Object byte[] 32
@@ -78,37 +73,28 @@ $rng = [Security.Cryptography.RandomNumberGenerator]::Create()
 $rng.GetBytes($bytes)
 $rng.Dispose()
 $setupKey = [Convert]::ToBase64String($bytes)
-Write-Host "초기 총관리자 설정 키: $setupKey"
+Write-Host "총관리자 설정 키: $setupKey"
 pnpm exec wrangler secret put ADMIN_SETUP_TOKEN --config .\dist\server\wrangler.json
 ```
 
-그다음 Worker의 `workers.dev` 주소에 접속해 계정을 가입하고 로그인한 뒤, **내 계정 → 총관리자 설정**에 키를 입력합니다. 이 키는 브라우저 코드나 GitHub에 넣지 않습니다. 현재 앱은 첫 SUPER 계정이 정해진 뒤 추가 계정의 승격을 막습니다.
+`Enter a secret value`에는 표시된 키 값만 붙여 넣습니다. 이 키는 계정 로그인 비밀번호가 아닙니다. 총관리자가 지정된 뒤에는 같은 키로 다른 계정을 승격할 수 없습니다. 부관리자는 총관리자가 회원 목록에서 임명합니다.
 
-## 중요한 점
+## 5. 오류가 날 때
 
-- `pnpm run build`를 다시 하면 `dist/`가 갱신됩니다. 개인 대상 변수 세 개를 같은 PowerShell 창에 유지하세요.
-- 현재 Workers 배포는 RP LAND 서버와 D1만 옮깁니다. 사용자 정의 도메인, 기존 Sites 주소, 접근 정책은 자동 이전되지 않습니다.
-- 개인 Worker로 옮기면 계정과 게시물은 이제 본인 Cloudflare D1에 저장됩니다. 배포 후 주소와 로그인/스레드 저장을 직접 확인한 뒤 이용자에게 새 주소를 공유하세요.
-- 공개 초기화 API는 제거되어 `RESET_TOKEN`은 더 이상 사용하지 않습니다.
+| 상황 | 확인할 내용 |
+| --- | --- |
+| `pnpm`을 찾을 수 없음 | 2번의 pnpm 설치 후 새 PowerShell 창에서 재시도 |
+| Cloudflare 인증·권한 오류 | `pnpm exec wrangler login` 후 `whoami`로 계정 확인 |
+| 총관리자 설정 키가 서버에 없다는 안내 | 올바른 Worker에 `ADMIN_SETUP_TOKEN` 등록 |
+| 설정 키를 확인하라는 안내 | 입력값이 등록한 키와 같은지 확인. 앞뒤 공백도 구분 |
+| 이미 총관리자가 지정되었다는 안내 | 기존 총관리자 계정 사용. 키 재발급으로 바뀌지 않음 |
+| 시도 횟수 제한 | 안내된 시간이 지난 뒤 재시도. 같은 접속 주소는 제한을 공유할 수 있음 |
+| 배포 후 이전 화면이 보임 | PC에서 Ctrl + F5, 휴대폰에서 페이지 새로고침 |
 
-## Cloudflare 공식 안내
+비밀번호 자동 복구와 공개 데이터 초기화 API는 제공하지 않습니다. 계정 문제를 해결하려고 DB 전체를 초기화하지 마세요.
 
-- [D1 만들기 및 Worker에 연결](https://developers.cloudflare.com/d1/get-started/)
-- [마이그레이션](https://developers.cloudflare.com/d1/reference/migrations/)
-- [내보내기와 가져오기](https://developers.cloudflare.com/d1/best-practices/import-export-data/)
+## 참고
 
-
-## 일상 업데이트와 백업
-
-기본 운영 대상이 저장소에 지정되어 있어 새 PowerShell 창에서도 다음 명령으로 업데이트합니다.
-
-```powershell
-git pull
-pnpm run build
-pnpm db:backup
-pnpm exec wrangler deploy --config .\dist\server\wrangler.json
-```
-
-백업은 현재 로그인한 Cloudflare 계정으로 운영 D1을 SQL 파일로 내보냅니다. `.backups` 폴더는 Git에서 제외됩니다. 백업 파일에는 계정 해시와 비공개 글도 포함되므로 공개하거나 GitHub에 올리지 마세요. 별도의 안전한 위치에 복사해서 보관하세요. 자동 백업 스케줄은 생성하지 않습니다. 복원은 덮어쓰기 위험이 있으므로 자동 실행하지 않습니다.
-
-2026-10-08 인증 제한 개선에는 DB 마이그레이션이 필요 없습니다. 공개 HTTP 초기화 API는 제거했습니다. 가입은 접속 주소별 15분 20회, 로그인과 비밀 스레드 인증은 접속 주소 전체 100회 및 주소·대상별 20회로 제한합니다. 같은 공유기나 프록시를 사용하는 이용자는 주소별 제한을 공유할 수 있습니다. 분산 공격 방어를 완전히 대체하지는 않습니다.
+- [Cloudflare D1 시작하기](https://developers.cloudflare.com/d1/get-started/)
+- [D1 마이그레이션](https://developers.cloudflare.com/d1/reference/migrations/)
+- [D1 내보내기·가져오기](https://developers.cloudflare.com/d1/best-practices/import-export-data/)
