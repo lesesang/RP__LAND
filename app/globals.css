@@ -141,3 +141,21 @@ html{scroll-padding-bottom:calc(var(--rp-dock-height,0px) + 16px)}
 .activity-row summary{font-size:13px;color:var(--muted-foreground);cursor:pointer;margin-top:4px}
 .activity-row details p{font-size:13px;margin:6px 0}
 @media(pointer:coarse){.article>.actions .btn,.comment .actions .btn,.comment-top .btn,.user-row .actions .btn,.uncategorized-row>.btn{min-height:34px}.toolbar .image-host-link{min-height:40px}}
+
+/* Compact by default: secondary fields expand inside the bounded dock. */
+.editor-tools>summary{display:none}
+.editor-tools.compact>summary,.character-options>summary{display:list-item;cursor:pointer;font-size:13px;line-height:1.5;padding:4px 2px;color:var(--muted-foreground);overflow-wrap:anywhere}
+.thread-dock{max-height:min(280px,36dvh,calc(var(--rp-visible-height,100dvh) * .45))}
+.thread-dock-heading{padding:4px 0;gap:8px;margin:0 auto}
+.thread-dock-heading h2{font-size:14px}
+.thread-dock-heading .btn{min-height:28px;padding:3px 8px;font-size:12px}
+.thread-dock-body{margin:0 auto}
+.thread-dock .compose{padding-bottom:6px}
+.thread-dock .compose textarea{min-height:52px;height:60px;max-height:110px;border-radius:6px;resize:vertical;padding:6px 10px}
+.thread-dock .editor-count{line-height:1.2;font-size:12px}
+.thread-dock .compose-bottom{margin-top:4px;flex-wrap:nowrap}
+.thread-dock .compose-bottom .btn{min-height:32px;padding:4px 10px}
+.thread-dock .character-options .field{margin:4px 0}
+.thread-dock .editor-tools[open]{margin-bottom:4px}
+@media(max-width:760px){.thread-dock{max-height:min(250px,36dvh,calc(var(--rp-visible-height,100dvh) * .45))}.thread-dock .compose textarea{height:54px;min-height:48px}.thread-dock-heading .btn{min-height:30px}.thread-dock .compose-bottom .btn{min-height:34px}}
+@media(max-height:500px){.thread-dock{max-height:min(200px,40dvh,calc(var(--rp-visible-height,100dvh) * .45))}.thread-dock .compose textarea{height:48px;min-height:40px}}
