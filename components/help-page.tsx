@@ -14,7 +14,7 @@ const formattingExamples=[
  {title:'코드 · </>',tip:'백틱 하나로 감싸면 꾸밈 문법을 적용하지 않고 그대로 보여 줍니다. 코드 안의 주사위도 굴러가지 않습니다.',text:'양식은 `**굵게**` 또는 `[dice:1d6]`처럼 씁니다.'},
  {title:'코드 블록',tip:'여러 줄의 양식을 그대로 보여 줄 때 사용합니다. 시작과 끝을 백틱 3개로 감쌉니다.',text:'```\n**이 글자는 굵어지지 않습니다.**\n[dice:1d6]\n```'},
  {title:'링크',tip:'대괄호에는 표시할 글자, 소괄호에는 주소를 넣습니다. 이 예시는 연습장으로 연결됩니다.',text:'[연습장으로 이동](?view=practice)'},
- {title:'이미지 주소',tip:'직접 열리는 이미지 주소를 넣습니다. 아래는 사이트 로고를 사용한 예시입니다. 외부 이미지는 /favicon.svg 대신 https://로 시작하는 이미지 주소를 넣으세요.',text:'!(/favicon.svg)'},
+ {title:'이미지 주소',tip:'‘이미지 주소’를 누르고 !()의 괄호 안에 이미지 직접 주소를 붙여 넣으세요. 아래는 사이트 로고 예시입니다. 이미지 설명을 덧붙이려면 ![설명](주소)로 쓸 수 있습니다. 설명은 이미지가 표시되지 않을 때 대신 보이거나 화면 읽기 도구에서 사용됩니다.',text:'!(/favicon.svg)'},
 ];
 function FormattingExamples(){return <div className="formatting-examples">{formattingExamples.map(example=><section className="formatting-example" key={example.title}>
 <h3>{example.title}</h3><p className="muted">{example.tip}</p>

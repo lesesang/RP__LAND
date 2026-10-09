@@ -55,3 +55,14 @@ assert.equal((shortImages.match(/<img /g)||[]).length,2);
 assert.match(shortImages, /<code>!\(https:\/\/example.com\/code.png\)<\/code>/);
 assert.ok(!shortImages.includes('src="javascript:'));
 console.log('PASS short image syntax, code literal and unsafe URL rejection');
+
+const mixedImages=renderToStaticMarkup(<Rich text={'![캐릭터의 모습](https://example.com/character.png)\n![](https://example.com/empty.png)\n!(https://example.com/short.png)\n![밤하늘](https://example.com/night.png "별이 빛나는 밤")'} />);
+assert.equal((mixedImages.match(/<img /g)||[]).length,4);
+const imageTags=mixedImages.match(/<img [^>]*>/g)||[];
+for(const [file,alt] of [['character','캐릭터의 모습'],['empty',''],['short',''],['night','밤하늘']]){
+  const tag=imageTags.find(tag=>tag.includes(`src="https://example.com/${file}.png"`));
+  assert.ok(tag,`image URL preserved: ${file}`);
+  assert.ok(tag.includes(`alt="${alt}"`),`image description preserved: ${file}`);
+}
+assert.ok(imageTags.some(tag=>tag.includes('title="별이 빛나는 밤"')));
+console.log('PASS mixed image forms preserve URLs, Korean descriptions and titles');
