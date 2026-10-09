@@ -24,14 +24,15 @@ export function isPracticeResponseLink(href = '') {
 export function prepareMarkup(source: string) {
   const text = source.replace(/\r\n?/g, '\n').replace(/[\uE000\uE001]/g, '\uFFFD');
   const tokens: MarkupToken[] = [];
-  const pattern = /```[\s\S]*?```|`[^`\n]*`|\[(color|ruby|fold)=([^\]\n]{1,120})\]|\[(transparent)\]|\[dice:[^\]]*\]|>>>([a-z0-9-]+)\/(\d+)|>>(\d+)|\+\+([^+\n]+)\+\+/gi;
+  const pattern = /```[\s\S]*?```|`[^`\n]*`|\[(color|ruby|fold)=([^\]\n]{1,120})\]|\[(transparent)\]|\[dice:[^\]]*\]|>>>([a-z0-9-]+)\/(\d+)|>>(\d+)|\+\+([^+\n]+)\+\+|!\(((?:https?:\/\/|\/(?!\/))[^\s()]+)\)/gi;
   let output = '', cursor = 0, m: RegExpExecArray | null;
   while ((m = pattern.exec(text))) {
     if (m[0].startsWith('`')) continue;
     const start = m.index;
-    let kind = (m[1] || m[3] || (m[4] || m[6] ? 'anchor' : m[7] ? 'underline' : 'dice')).toLowerCase();
+    let kind = (m[1] || m[3] || (m[4] || m[6] ? 'anchor' : m[7] ? 'underline' : m[8] ? 'image' : 'dice')).toLowerCase();
     let end = pattern.lastIndex, bodyStart = end, body = '', value = m[2] || '';
-    if (kind === 'anchor') { value = m[4] || ''; body = m[5] || m[6]; }
+    if (kind === 'image') { value = m[8]; }
+    else if (kind === 'anchor') { value = m[4] || ''; body = m[5] || m[6]; }
     else if (kind === 'underline') { body = m[7]; bodyStart = start + 2; }
     else if (kind !== 'dice') {
       const close = `[/${kind}]`;

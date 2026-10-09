@@ -16,6 +16,7 @@ export function Rich({ text, rolls = [], offset = 0, depth = 0, inline = false, 
     if (!item) return null;
     const child = <Rich text={item.body} rolls={rolls} offset={offset + item.bodyStart} depth={depth + 1} inline={inline || item.kind !== 'fold'} context={context} />;
     switch (item.kind) {
+      case 'image': return <img src={item.value} alt="" loading="lazy" referrerPolicy="no-referrer"/>;
       case 'ruby':
         return <ruby className="rp-ruby"><span className="rp-ruby-base">{child}</span><rp>(</rp><rt>{item.value}</rt><rp>)</rp></ruby>;
       case 'color': return <span style={{ color: item.value }}>{child}</span>;

@@ -49,3 +49,9 @@ assert.match(explicitDice,/\[dice:3x1\.\.6!= 5, 6, 2 · 합계 13\]/);
 const singleDice=renderToStaticMarkup(<Rich text={'[dice:1x0..0-5]'} rolls={[{start:0,notation:'[dice:1x0..0-5]',sides:1,values:[-5],total:-5}]}/>);
 assert.match(singleDice,/\[dice:1x0\.\.0-5= -5\]/);
 console.log('PASS visible dice notation with unique rolls, totals and signed results');
+
+const shortImages=renderToStaticMarkup(<Rich text={'!(https://example.com/a.png) !(/favicon.svg) `!(https://example.com/code.png)` !(javascript:alert)'} />);
+assert.equal((shortImages.match(/<img /g)||[]).length,2);
+assert.match(shortImages, /<code>!\(https:\/\/example.com\/code.png\)<\/code>/);
+assert.ok(!shortImages.includes('src="javascript:'));
+console.log('PASS short image syntax, code literal and unsafe URL rejection');
