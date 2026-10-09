@@ -153,7 +153,7 @@ html{scroll-padding-bottom:calc(var(--rp-dock-height,0px) + 16px)}
 .thread-dock .compose{padding-bottom:6px}
 .thread-dock .compose textarea{min-height:52px;height:60px;max-height:110px;border-radius:6px;resize:vertical;padding:6px 10px}
 .thread-dock .editor-count{line-height:1.2;font-size:12px}
-.thread-dock .compose-bottom{margin-top:4px;flex-wrap:nowrap}
+.thread-dock .compose-bottom{margin-top:4px;flex-wrap:nowrap;justify-content:flex-end}
 .thread-dock .compose-bottom .btn{min-height:32px;padding:4px 10px}
 .thread-dock .character-options .field{margin:4px 0}
 .thread-dock .editor-tools[open]{margin-bottom:4px}
@@ -177,3 +177,43 @@ html{scroll-padding-bottom:calc(var(--rp-dock-height,0px) + 16px)}
 .thread-dock .toolbar .ruby-input{width:72px;min-height:28px;padding:3px 6px;font-size:14px}
 .thread-dock .color-picker input{width:24px;height:24px}
 @media(pointer:coarse){.dock-resize{height:22px;flex-basis:22px}.thread-dock .toolbar button,.thread-dock .toolbar .image-host-link{min-height:32px}.thread-dock .toolbar .ruby-input{min-height:32px;font-size:16px}}
+
+/* Reading-first layout across narrow windows, touchscreens and landscape. */
+.thread-dock[data-collapsed]{max-height:none}
+.thread-dock[data-collapsed] .thread-dock-heading{min-height:42px}
+.thread-dock-heading{min-width:0}
+.thread-dock-heading h2{min-width:0;overflow-wrap:anywhere}
+.thread-dock-heading .btn{flex-shrink:0}
+.thread-dock .compose-bottom{position:sticky;bottom:0;background:var(--card);padding-top:4px;padding-bottom:2px;z-index:1}
+.thread-dock .compose-bottom .actions{flex-wrap:wrap;justify-content:flex-end}
+.editor-tools.compact>summary,.character-options>summary{border-radius:4px}
+.editor-tools.compact>summary:focus-visible,.character-options>summary:focus-visible{outline:2px solid var(--ring);outline-offset:1px}
+.thread-jump .btn:disabled{opacity:1;color:var(--muted-foreground);background:var(--muted)}
+[data-slot=dialog-content] input,[data-slot=dialog-content] textarea{min-width:0}
+[data-slot=dialog-title]{padding-right:24px;overflow-wrap:anywhere}
+[data-slot=pagination-content]{flex-wrap:wrap}
+.thread-main time{font-size:14px;overflow-wrap:anywhere}
+@media(max-width:760px){
+ .thread-jump{flex-direction:row;gap:6px;bottom:calc(var(--rp-dock-height,0px) + var(--rp-keyboard-offset,0px) + 8px)}
+ .thread-jump .btn{width:40px;height:40px}
+ .topbar nav a{min-height:44px}
+ .thread-dock .character-options>summary,.thread-dock .editor-tools.compact>summary{min-height:32px;padding:6px 2px}
+ .thread-dock-heading .btn{min-height:34px}
+ .thread-dock[data-collapsed] .thread-dock-heading{min-height:44px}
+ .thread-row .thread-main h2{font-size:16px;line-height:1.5;overflow-wrap:anywhere}
+ .list-head{gap:10px;flex-wrap:wrap}
+ .article-body{margin:20px 0}
+}
+@media(max-width:380px){
+ .thread-dock .dock-reset{font-size:12px;padding:3px 5px}
+ .thread-dock-heading{gap:5px}
+ .thread-dock-heading h2{font-size:13px}
+ .heading h1{font-size:24px}
+ .topbar{padding-left:12px;padding-right:12px}
+ .topbar nav{gap:6px}
+ .thread-row>.btn{max-width:none}
+}
+@media(max-height:500px) and (min-width:761px){
+ .thread-jump{flex-direction:row;gap:6px}
+ .thread-jump .btn{width:36px;height:36px}
+}
