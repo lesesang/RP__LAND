@@ -53,10 +53,9 @@ export default function Home(){
  setError('');setLoading(true);
  try{
  if(entryId||view==='practice'){
- const eid=entryId||'practice',e=await api('entries/'+eid);if(!active())return;
+ const eid=entryId||'practice',{comments:replies=[],...e}=await api('entries/'+eid+'?include=comments');if(!active())return;
  if(e.pending&&view!=='schedule'){navigate('schedule',eid);return}
  if(!e.pending&&view==='schedule'){navigate('thread',eid);return}
- const replies=e.kind!=='wiki'?await api(`entries/${eid}/comments`):[];
  if(!active())return;
  const visible=Array.from(document.querySelectorAll('.comment,#composer')).find(node=>node.getBoundingClientRect().bottom>0);
  if(visible)scrollSnapshot.current={element:visible,top:visible.getBoundingClientRect().top,x:window.scrollX,y:window.scrollY};
@@ -69,13 +68,14 @@ export default function Home(){
  else{const d=await api(`entries?kind=${view}&q=${encodeURIComponent(query)}&category=${category}&page=${page}`);if(!active())return;setRows(d.entries);setTotal(d.total)}
  }catch(e){if(!active())return;const x=e as R;if(x.locked){setSecretTitle(x.title);setModal('unlock')}else setError(x.message)}finally{if(active())setLoading(false)}
  },[view,entryId,query,category,page,user,mine,navigate,revision]);
- useEffect(()=>{const t=setTimeout(()=>{void load()},150);return()=>{clearTimeout(t);loadVersion.current++}},[load]);
+ const previousSearch=useRef(query);
+ useEffect(()=>{const searching=previousSearch.current!==query&&!!query;previousSearch.current=query;const t=searching?setTimeout(()=>{void load()},150):null;if(!searching)void load();return()=>{if(t!==null)clearTimeout(t);loadVersion.current++}},[load,query]);
  useEffect(()=>{const ctx=(document as unknown as {modelContext?:{registerTool:(tool:unknown,opts:unknown)=>unknown}}).modelContext;if(!ctx?.registerTool)return;const controller=new AbortController();try{Promise.resolve(ctx.registerTool({name:'search_threads',description:'공개 스레드와 비밀 스레드 제목을 검색하고 검색 화면으로 이동합니다.',inputSchema:{type:'object',properties:{query:{type:'string',maxLength:120}},required:['query'],additionalProperties:false},annotations:{readOnlyHint:true,untrustedContentHint:true},execute:async(input:unknown)=>{const q=(input as R)?.query;if(typeof q!=='string'||q.length>120)throw new Error('검색어는 120자 이하 문자열이어야 합니다.');const data=await api(`entries?kind=thread&q=${encodeURIComponent(q)}`);navigate('thread');setQuery(q);setRows(data.entries);setTotal(data.total);return{total:data.total,entries:data.entries}}},{signal:controller.signal})).catch(()=>{})}catch{}return()=>controller.abort()},[navigate]);
  async function act(fn:()=>Promise<void>){setBusy(true);setError('');try{await fn()}catch(e){const message=(e as Error).message;setError(message);toast.error(message)}finally{setBusy(false)}}
  function startWrite(){if(!user){setModal('login');return}setSchedule({...emptySchedule});setTitle('');setContent('');setCoverImage('');setSelected([]);setSecret(false);setSecretPw('');setEditing(false);openWriter(view==='wiki'?'wiki':'thread')}
  function startEdit(){setSchedule(fromSchedule(entry!));setTitle(entry!.title);setContent(entry!.content);setCoverImage(entry!.cover_image||'');setSelected(JSON.parse(entry!.categories));setEditing(true);openWriter(entry!.kind==='wiki'?'wiki':'thread')}
  async function saveEntry(){const d=await api('entries'+(editing?'/'+entry!.id:''),editing?'PATCH':'POST',{title,content,coverImage,categories:selected,kind:writeKind,isSecret:secret,secretPw,...((!editing||entry?.pending)?schedulePayload(schedule):{})});const eid=editing?entry!.id:d.id;if(!editing&&secret)await api(`entries/${eid}/unlock`,'POST',{password:secretPw});const pending=schedule.enabled&&new Date(schedulePayload(schedule).scheduledAt||'').getTime()>Date.now();navigate(pending?'schedule':writeKind,eid);toast.success(editing?'수정했습니다.':pending?'예약했습니다.':'새 이야기를 열었습니다.');}
- async function sendComment(){if(!user){setModal('login');return}await api(`entries/${entry!.id}/comments${editComment?'/'+editComment:''}`,editComment?'PATCH':'POST',{content:commentText,character:character||user.username});setCommentText('');setEditComment('');await Promise.all([load(),syncMe()]);toast.success('레스를 등록했습니다.')}
+ async function sendComment(){if(!user){setModal('login');return}await api(`entries/${entry!.id}/comments${editComment?'/'+editComment:''}`,editComment?'PATCH':'POST',{content:commentText,character:character||user.username});setCommentText('');setEditComment('');const refresh=load();void syncMe().catch(()=>{});await refresh;toast.success('레스를 등록했습니다.')}
  useLayoutEffect(()=>{const saved=scrollSnapshot.current;scrollSnapshot.current=null;if(saved){const delta=saved.element.isConnected?saved.element.getBoundingClientRect().top-saved.top:0;window.scrollTo({left:saved.x,top:saved.element.isConnected?window.scrollY+delta:saved.y,behavior:'instant'})}},[comments]);
  useEffect(()=>{if(entry?.kind!=='thread')return;const key=entry.id;if(handledAnchor.current===key)return;handledAnchor.current=key;const match=/^#res-(\d+)$/.exec(location.hash);if(!match)return;const c=comments[Number(match[1])-1];if(!c||c.deleted||c.hidden){toast.error(!c?'레스를 찾을 수 없습니다.':c.deleted?'삭제된 레스입니다.':'가려진 레스입니다.');history.replaceState(null,'',location.pathname+location.search);return}requestAnimationFrame(()=>document.getElementById('res-'+Number(match[1]))?.scrollIntoView({block:'center'}))},[entry?.id,comments]);
  const isAdmin=user&&user.role!=='USER';const detail=!!entryId||view==='practice';const label=view==='wiki'?'위키':view==='practice'?'연습장':view==='users'?'회원 목록':view==='settings'?'내 계정 · 관리':view==='activity'?'관리활동':view==='schedule'?'시간표':view==='help'?'사용법':'스레드';
