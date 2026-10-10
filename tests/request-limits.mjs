@@ -70,7 +70,7 @@ const posted=await mutateReply(`entries/${publicId}/comments?include=comments`,'
 assert.equal(posted.status,200);assert.equal(posted.data.character,'새 이름');
 assert.equal(posted.data.comments.length,4);assert.equal(JSON.parse(posted.data.comments[3].dice)[0].total,0);
 const hidden=await mutateReply(`entries/${publicId}/comments/${posted.data.id}?include=comments`,'PATCH',{hidden:true});
-assert.equal(hidden.status,200);assert.equal(hidden.data.comments[3].content,'');assert.equal(hidden.data.comments[3].dice,null);
+assert.equal(hidden.status,200);assert.equal(hidden.data.comments[3].content,'[dice:1x0..0]');assert.equal(JSON.parse(hidden.data.comments[3].dice)[0].total,0);
 const deleted=await mutateReply(`entries/${publicId}/comments/${posted.data.id}?include=comments`,'DELETE',{});
 assert.equal(deleted.status,200);assert.equal(deleted.data.comments.length,4);assert.equal(deleted.data.comments[3].deleted,1);
 const practicePosted=await mutateReply('entries/practice/comments?include=comments','POST',{content:'practice'});
@@ -82,4 +82,20 @@ assert.equal(practiceDeleted.status,200);assert.equal(practiceDeleted.data.comme
 assert.equal((await mutateReply(`entries/${publicId}/comments?include=comments`,'POST',{content:'no auth'},'')).status,401);
 const list=await getEntry('entries?kind=thread');assert.equal(list.status,200);assert.ok(list.data.total>=1);
 console.log('PASS mutation snapshots: saved dice, hidden redaction, deleted numbering, practice edit/delete, auth and list');
+const superId=sql.prepare("SELECT id FROM users WHERE username='tester'").get().id;
+const superRead=await getEntry(`entries/${publicId}?include=comments`,other.cookie);
+assert.equal(superRead.data.comments[1].content,'hidden text');
+assert.equal(superRead.data.comments[2].content,'');
+assert.equal(sql.prepare('SELECT hidden FROM comments WHERE id=?').get(superRead.data.comments[1].id).hidden,1);
+for(const role of ['SUB','USER']){
+ sql.prepare('UPDATE users SET role=? WHERE id=?').run(role,superId);
+ for(const endpoint of [`entries/${publicId}?include=comments`,`entries/${publicId}/comments`]){
+  const result=await getEntry(endpoint,other.cookie);
+  const replies=result.data.comments||result.data;
+  assert.equal(replies[1].content,'');assert.equal(replies[1].dice,null);
+ }
+}
+sql.prepare("UPDATE users SET role='SUPER' WHERE id=?").run(superId);
+assert.equal((await getEntry(`entries/${publicId}/anchors/2`,other.cookie)).data.status,'hidden');
+console.log('PASS super-only hidden review, owner/sub-admin redaction, deleted exclusion and unchanged hidden/anchor state');
 sql.close();

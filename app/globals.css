@@ -218,3 +218,5 @@ html{scroll-padding-bottom:calc(var(--rp-dock-height,0px) + 16px)}
  .thread-jump{flex-direction:row;gap:6px}
  .thread-jump .btn{width:36px;height:36px}
 }
+
+.hidden-reply-review{margin-top:8px;border:1px solid var(--border);border-radius:8px;padding:8px 12px}.hidden-reply-review>summary{cursor:pointer;font-size:13px;font-weight:600;color:var(--primary)}.hidden-reply-review[open]>summary{margin-bottom:8px}
