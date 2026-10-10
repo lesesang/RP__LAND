@@ -1,7 +1,7 @@
 'use client';
 import {useEffect,useState} from 'react';
 type Activity={id:string;action:string;created:string;actor:string|null;target:string};
-const labels:Record<string,string>={'setup':'총관리자 지정','update-account':'계정 정보 변경','withdraw':'회원 탈퇴','deactivate':'회원 탈퇴 처리','delete-category':'카테고리 삭제','set-entry-categories':'글 분류 변경','unlock':'비밀 스레드 열람','delete-practice-comment':'연습장 레스 삭제','delete-comment':'레스 삭제','hide':'레스 가리기','unhide':'레스 가림 해제','delete-entry':'문서 삭제','role:SUB':'부관리자 임명','role:USER':'일반회원으로 변경'};
+const labels:Record<string,string>={'setup':'총관리자 지정','update-account':'계정 정보 변경','withdraw':'회원 탈퇴','deactivate':'회원 탈퇴 처리','delete-category':'카테고리 삭제','set-entry-categories':'글 분류 변경','unlock':'비밀 스레드 열람','view-entry-password':'비밀글 비밀번호 확인','delete-practice-comment':'연습장 레스 삭제','delete-comment':'레스 삭제','hide':'레스 가리기','unhide':'레스 가림 해제','delete-entry':'문서 삭제','role:SUB':'부관리자 임명','role:USER':'일반회원으로 변경'};
 export function ActivityPage(){
  const[page,setPage]=useState(1),[revision,setRevision]=useState(0),[rows,setRows]=useState<Activity[]>([]),[total,setTotal]=useState(0),[loading,setLoading]=useState(true),[error,setError]=useState('');
  useEffect(()=>{const controller=new AbortController();setLoading(true);setError('');fetch(`/api/audit?page=${page}`,{signal:controller.signal}).then(async r=>{const d=await r.json() as {entries:Activity[];total:number;error?:string};if(!r.ok)throw new Error(d.error||'관리활동을 불러오지 못했습니다.');return d}).then(d=>{setRows(d.entries);setTotal(d.total)}).catch(e=>{if(!controller.signal.aborted)setError(e.message)}).finally(()=>{if(!controller.signal.aborted)setLoading(false)});return()=>controller.abort()},[page,revision]);

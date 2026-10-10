@@ -98,3 +98,27 @@ pnpm exec wrangler secret put ADMIN_SETUP_TOKEN --config .\dist\server\wrangler.
 - [Cloudflare D1 시작하기](https://developers.cloudflare.com/d1/get-started/)
 - [D1 마이그레이션](https://developers.cloudflare.com/d1/reference/migrations/)
 - [D1 내보내기·가져오기](https://developers.cloudflare.com/d1/best-practices/import-export-data/)
+
+## 비밀글 비밀번호 확인 기능
+
+비밀번호 확인 권한은 작성자·공유 편집자·총관리자·부관리자에게 있습니다. 확인해도 입장 권한은 생기지 않으며 열람 비밀번호를 입력해야 합니다. 계정 로그인 비밀번호에는 적용되지 않습니다.
+
+서버는 확인용 비밀번호를 AES-GCM으로 암호화해 보관합니다. 다음 명령은 프로젝트 폴더에서 **처음 한 번만** 실행하세요. 이미 설정한 암호화 키를 새로 생성하거나 덮어쓰면 보관된 비밀번호를 읽을 수 없으므로, 키는 안전한 비밀번호 관리자에 별도로 보관하세요. 키를 GitHub나 대화에 올리지 마세요.
+
+```powershell
+$bytes = New-Object byte[] 32
+$rng = [Security.Cryptography.RandomNumberGenerator]::Create()
+$rng.GetBytes($bytes)
+$rng.Dispose()
+$entryPasswordKey = [Convert]::ToBase64String($bytes)
+$entryPasswordKey | pnpm exec wrangler secret put ENTRY_PASSWORD_KEY --config .\dist\server\wrangler.json
+```
+
+키는 `$entryPasswordKey` 변수에 있으며, Cloudflare에 저장한 뒤에도 백업을 보관해야 합니다. 데이터베이스에도 새 테이블이 필요합니다. 빌드 후 아래 명령으로 마이그레이션을 적용하고 배포하세요.
+
+```powershell
+pnpm exec wrangler d1 migrations apply DB --remote --config .\dist\server\wrangler.json
+pnpm exec wrangler deploy --config .\dist\server\wrangler.json
+```
+
+해시만 저장된 비밀번호는 원문을 복구할 수 없습니다. 암호화 키가 설정된 상태에서 올바른 비밀번호로 한 번 입장하면 확인용 암호문이 보관됩니다. 비밀번호 확인 자체는 입장 쿠키를 발급하지 않습니다. 직접 비밀번호를 입력해 입장한 경우의 기존 1시간 열람 유효기간은 유지됩니다.

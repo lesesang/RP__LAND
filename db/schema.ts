@@ -11,3 +11,5 @@ export const attempts=sqliteTable('attempts',{key:text('key').primaryKey(),count
 export const audit=sqliteTable('audit',{id:text('id').primaryKey(),actor:text('actor'),action:text('action').notNull(),target:text('target').notNull(),created:text('created').notNull()});
 
 export const maintenance=sqliteTable('maintenance',{id:text('id').primaryKey()});
+
+export const entryPasswords=sqliteTable('entry_passwords',{entryId:text('entry_id').primaryKey(),encrypted:text('encrypted').notNull()});
