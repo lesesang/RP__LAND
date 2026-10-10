@@ -1,6 +1,6 @@
 'use client';
 import {toast} from 'sonner';
-import { Fragment } from 'react';
+import { Fragment, memo, type ReactElement } from 'react';
 import Markdown from 'react-markdown';
 import { Dices } from 'lucide-react';
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
@@ -8,7 +8,7 @@ import { prepareMarkup, markupPlugin, anchorHref, isPracticeResponseLink, type A
 import type { DiceRoll } from '@/lib/roleplay';
 
 type RichProps = { text: string; rolls?: DiceRoll[]; offset?: number; depth?: number; inline?: boolean; context?: AnchorContext };
-export function Rich({ text, rolls = [], offset = 0, depth = 0, inline = false, context = {} }: RichProps) {
+export const Rich = memo(function RichContent({ text, rolls = [], offset = 0, depth = 0, inline = false, context = {} }: RichProps): ReactElement {
   if (depth > 12) return <span style={{ whiteSpace: 'pre-wrap' }}>{text}</span>;
   const prepared = prepareMarkup(text);
   function token(index: number) {
@@ -64,4 +64,7 @@ export function Rich({ text, rolls = [], offset = 0, depth = 0, inline = false, 
   const trailing = /\n+$/.exec(prepared.text)?.[0].length || 0;
   const content = <>{leading>0&&<span aria-hidden="true" className="rp-line-gap" style={{height:`${leading*1.9}em`}}/>}<Markdown skipHtml remarkPlugins={[markupPlugin]} components={components}>{prepared.text}</Markdown>{trailing>0&&<span aria-hidden="true" className="rp-line-gap" style={{height:`${trailing*1.9}em`}}/>}</>;
   return inline ? <span className="rp-inline-content">{content}</span> : <div className="prose rp-prose">{content}</div>;
-}
+},(previous,next)=>previous.text===next.text
+ && previous.offset===next.offset && previous.depth===next.depth && previous.inline===next.inline
+ && previous.context?.entryId===next.context?.entryId && previous.context?.kind===next.context?.kind
+ && (previous.rolls===next.rolls || JSON.stringify(previous.rolls||[])===JSON.stringify(next.rolls||[])));
