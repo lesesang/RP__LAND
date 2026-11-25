@@ -1,5 +1,5 @@
 'use client';
-import {useId,useLayoutEffect,useRef,useState} from 'react';
+import {useCallback,useEffect,useId,useLayoutEffect,useRef,useState} from 'react';
 import {Dices,Calculator} from 'lucide-react';
 import {Checkbox} from '@/components/ui/checkbox';
 import {Rich} from '@/components/rich-text';
@@ -25,6 +25,15 @@ useLayoutEffect(()=>{
  t.focus({preventScroll:true});
  for(const {element,top,left} of pending.scroll){element.scrollTop=top;element.scrollLeft=left;}
 },[value]);
+// On small screens the docked reply box grows with its text (CSS caps the height),
+// unless the reader has sized the dock by hand.
+const autoGrow=useCallback(()=>{
+ const t=ref.current;if(!t||!compact||t.hidden)return;
+ if(!window.matchMedia('(max-width:760px), (hover:none) and (pointer:coarse)').matches||t.closest('[data-sized]')){t.style.height='';return}
+ t.style.height='auto';t.style.height=`${t.scrollHeight+2}px`;
+},[compact]);
+useLayoutEffect(autoGrow,[value,preview,autoGrow]);
+useEffect(()=>{window.addEventListener('resize',autoGrow);return()=>window.removeEventListener('resize',autoGrow)},[autoGrow]);
 const errors={minimum:numberError(minimum,'최소값',0,100000000),maximum:numberError(ds,'최대값',0,100000000),count:numberError(dc,'개수',1,100),modifier:numberError(modifier,'보정값',-100000000,100000000)};
 if(!errors.minimum&&!errors.maximum&&Number(minimum)>Number(ds))errors.maximum='최대값은 입력한 최소값 이상이어야 합니다.';
 function diceField(key:keyof typeof errors,label:string,value:string,setValue:(v:string)=>void,hint:string,signed=false){const fieldId=diceId+'-'+key,error=showDiceErrors?errors[key]:'';return <label htmlFor={fieldId}>{label}<input id={fieldId} aria-label={'주사위 '+label} aria-describedby={fieldId+'-hint'+(error?' '+fieldId+'-error':'')} aria-invalid={!!error} type="text" inputMode={signed?'text':'numeric'} autoComplete="off" spellCheck={false} value={value} onChange={e=>setValue(e.target.value)} onBlur={()=>setShowDiceErrors(true)}/><small className="dice-hint" id={fieldId+'-hint'}>{hint}</small>{error&&<small className="dice-field-error" id={fieldId+'-error'} role="alert">{error}</small>}</label>}

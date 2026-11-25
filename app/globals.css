@@ -220,3 +220,16 @@ html{scroll-padding-bottom:calc(var(--rp-dock-height,0px) + 16px)}
 }
 
 .hidden-reply-review{margin-top:8px;border:1px solid var(--border);border-radius:8px;padding:8px 12px}.hidden-reply-review>summary{cursor:pointer;font-size:13px;font-weight:600;color:var(--primary)}.hidden-reply-review[open]>summary{margin-bottom:8px}
+
+/* Small-screen reply composer: a roomier box that grows with the text, with options and
+   submit sharing rows so the keyboard leaves room to write. */
+@media(max-width:760px),(hover:none) and (pointer:coarse){
+.thread-dock:not([data-sized]){max-height:min(62dvh,calc(var(--rp-visible-height,100dvh) * .62))}
+.thread-dock:not([data-sized]) .compose{display:flex;flex-wrap:wrap;align-items:center;column-gap:16px}
+.thread-dock:not([data-sized]) .compose>*{flex:1 0 100%;min-width:0}
+.thread-dock:not([data-sized]) .compose>.character-options:not([open]),.thread-dock:not([data-sized]) .compose>.editor-tools:not([open]){flex:0 1 auto}
+.thread-dock:not([data-sized]) .compose>.character-options:not([open])>summary{max-width:52vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.thread-dock:not([data-sized]) .compose textarea{min-height:88px;height:88px;max-height:max(88px,calc(var(--rp-visible-height,100dvh) * .62 - 150px));resize:none;line-height:1.5}
+.thread-dock:not([data-sized]) .compose>.editor-count{flex:1 1 auto;text-align:left;margin-top:4px}
+.thread-dock:not([data-sized]) .compose>.compose-bottom{flex:0 0 auto;margin-top:4px}
+}
