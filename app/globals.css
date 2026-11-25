@@ -233,3 +233,17 @@ html{scroll-padding-bottom:calc(var(--rp-dock-height,0px) + 16px)}
 .thread-dock:not([data-sized]) .compose>.editor-count{flex:1 1 auto;text-align:left;margin-top:4px}
 .thread-dock:not([data-sized]) .compose>.compose-bottom{flex:0 0 auto;margin-top:4px}
 }
+
+/* Friendlier lists and replies: search clearing, unread badges, anchor shortcuts. */
+.searchbox input{padding-right:44px}
+.searchbox .search-clear{position:absolute;right:6px;top:50%;transform:translateY(-50%);display:grid;place-items:center;width:36px;height:36px;border:0;border-radius:8px;background:none;color:#9296a5}
+.searchbox .search-clear svg{position:static}
+.searchbox .search-clear:hover{background:var(--secondary);color:var(--foreground)}
+.new-badge{flex-shrink:0;font-size:12px;font-weight:700;color:#fff;background:var(--primary);border-radius:999px;padding:2px 9px;white-space:nowrap}
+button.comment-num{border:0;background:none;padding:4px 6px;border-radius:6px;font:inherit;font-size:13px;color:#8b80c8}
+button.comment-num:hover{background:var(--secondary);color:var(--primary);text-decoration:underline}
+.comment{scroll-margin-top:16px}
+.comment.unread-flash{animation:unread-flash 2.4s ease-out}
+@keyframes unread-flash{0%,35%{background:#efeafe}100%{background:transparent}}
+@media(prefers-reduced-motion:reduce){.comment.unread-flash{animation:none;background:#efeafe}}
+@media(max-width:760px){.new-badge{padding:2px 7px;font-size:11px}}

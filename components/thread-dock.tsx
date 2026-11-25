@@ -2,13 +2,17 @@
 import {useEffect,useLayoutEffect,useRef,useState,type ReactNode} from 'react';
 import {ArrowUp,ArrowDown,ChevronDown,ChevronUp,RefreshCw} from 'lucide-react';
 
-export function ThreadDock({children,title,editing}:{children:ReactNode;title:string;editing:string}){
+export function ThreadDock({children,title,editing,openSignal=0}:{children:ReactNode;title:string;editing:string;openSignal?:number}){
  const [collapsed,setCollapsed]=useState(true),[height,setHeight]=useState(0);
  const ref=useRef<HTMLElement>(null);
  const [size,setSize]=useState<number|null>(null);
  const drag=useRef<{y:number;height:number}|null>(null);
  const resize=(value:number)=>{const visible=window.visualViewport?.height||window.innerHeight;const compact=window.matchMedia('(max-width:760px), (hover:none) and (pointer:coarse)').matches;const max=Math.max(0,Math.min(580,visible*(compact?.85:.65),visible-56));setSize(Math.round(Math.max(Math.min(140,max),Math.min(value,max))))};
  useEffect(()=>{if(editing){setCollapsed(false);const frame=requestAnimationFrame(()=>ref.current?.querySelector<HTMLTextAreaElement>('textarea')?.focus({preventScroll:true}));return()=>cancelAnimationFrame(frame)}},[editing]);
+ // Only later requests open the dock; a signal left over from another thread is ignored on mount.
+ const initialSignal=useRef(openSignal);
+ useEffect(()=>{if(openSignal===initialSignal.current)return;initialSignal.current=openSignal;setCollapsed(false);
+const frame=requestAnimationFrame(()=>{const area=ref.current?.querySelector<HTMLTextAreaElement>('textarea');if(!area)return;area.focus({preventScroll:true});area.setSelectionRange(area.value.length,area.value.length)});return()=>cancelAnimationFrame(frame)},[openSignal]);
  useLayoutEffect(()=>{
   const el=ref.current;if(!el)return;
   const measure=()=>{const h=Math.ceil(el.getBoundingClientRect().height);setHeight(h);document.documentElement.style.setProperty('--rp-dock-height',`${h}px`)};
