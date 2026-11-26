@@ -208,6 +208,12 @@
  .thread-dock-heading h2{font-size:13px}
 }
 
+/* On wide screens the calculator panel (right side) must not cover the dock's submit button or the jump buttons. */
+@media(min-width:761px){
+ body:has(.calculator-sidebar[data-state=open]) .thread-dock{right:min(340px,92vw)}
+ body:has(.calculator-sidebar[data-state=open]) .thread-jump{right:calc(min(340px,92vw) + 12px)}
+}
+
 /* Secondary management controls stay compact; primary submit buttons remain prominent. */
 .article>.actions .btn,.comment .actions .btn,.comment-top .btn,.user-row .actions .btn,.uncategorized-row>.btn{font-size:13px;padding:4px 9px;min-height:30px;gap:5px;border-radius:6px}
 .toolbar .image-host-link{display:inline-flex;align-items:center;min-height:36px;padding:5px 10px;border-radius:4px;font-size:14px;color:var(--primary)}

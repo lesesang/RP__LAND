@@ -2,8 +2,10 @@
 const shortFormat = new Intl.DateTimeFormat('ko-KR', {month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Seoul'});
 const fullFormat = new Intl.DateTimeFormat('ko-KR', {dateStyle: 'long', timeStyle: 'short', timeZone: 'Asia/Seoul'});
 
-export const shortDate = (value: string) => shortFormat.format(new Date(value));
-export const fullDate = (value: string) => fullFormat.format(new Date(value));
+// Intl formatters throw on an invalid date; show the stored text instead of breaking the page.
+const safe = (format: Intl.DateTimeFormat, value: string) => { const date = new Date(value); return Number.isNaN(date.getTime()) ? String(value ?? '') : format.format(date); };
+export const shortDate = (value: string) => safe(shortFormat, value);
+export const fullDate = (value: string) => safe(fullFormat, value);
 
 /** Recent times read better as "5분 전"; anything a week or older falls back to the date. */
 export function timeAgo(value: string, now = Date.now()) {
