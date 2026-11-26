@@ -2,24 +2,34 @@
 import {useEffect,useLayoutEffect,useRef,useState,type ReactNode} from 'react';
 import {ArrowUp,ArrowDown,ChevronDown,ChevronUp,RefreshCw} from 'lucide-react';
 
-export function ThreadDock({children,title,editing}:{children:ReactNode;title:string;editing:string}){
- const [collapsed,setCollapsed]=useState(true),[height,setHeight]=useState(0);
+const OPEN_KEY='rp-land:dock-open';
+/** Fixed reply dock. Remembers whether the reader left it open, and shows a draft hint while collapsed. */
+export function ThreadDock({children,title,editing,openSignal=0,hint=''}:{children:ReactNode;title:string;editing:string;openSignal?:number;hint?:string}){
+ const [collapsed,setCollapsed]=useState(()=>{try{return localStorage.getItem(OPEN_KEY)!=='1'}catch{return true}}),[height,setHeight]=useState(0);
+ useEffect(()=>{try{localStorage.setItem(OPEN_KEY,collapsed?'0':'1')}catch{/* storage unavailable: keep the default */}},[collapsed]);
  const ref=useRef<HTMLElement>(null);
  const [size,setSize]=useState<number|null>(null);
  const drag=useRef<{y:number;height:number}|null>(null);
  const resize=(value:number)=>{const visible=window.visualViewport?.height||window.innerHeight;const compact=window.matchMedia('(max-width:760px), (hover:none) and (pointer:coarse)').matches;const max=Math.max(0,Math.min(580,visible*(compact?.85:.65),visible-56));setSize(Math.round(Math.max(Math.min(140,max),Math.min(value,max))))};
  useEffect(()=>{if(editing){setCollapsed(false);const frame=requestAnimationFrame(()=>ref.current?.querySelector<HTMLTextAreaElement>('textarea')?.focus({preventScroll:true}));return()=>cancelAnimationFrame(frame)}},[editing]);
+ // Only later requests open the dock; a signal left over from another thread is ignored on mount.
+ const initialSignal=useRef(openSignal);
+ useEffect(()=>{if(openSignal===initialSignal.current)return;initialSignal.current=openSignal;setCollapsed(false);
+const frame=requestAnimationFrame(()=>{const area=ref.current?.querySelector<HTMLTextAreaElement>('textarea');if(!area)return;area.focus({preventScroll:true});area.setSelectionRange(area.value.length,area.value.length)});return()=>cancelAnimationFrame(frame)},[openSignal]);
  useLayoutEffect(()=>{
   const el=ref.current;if(!el)return;
-  const measure=()=>{const h=Math.ceil(el.getBoundingClientRect().height);setHeight(h);document.documentElement.style.setProperty('--rp-dock-height',`${h}px`)};
-  const viewport=()=>{const v=window.visualViewport;document.documentElement.style.setProperty('--rp-keyboard-offset',`${v?Math.max(0,window.innerHeight-v.height-v.offsetTop):0}px`);document.documentElement.style.setProperty('--rp-visible-height',`${v?.height||window.innerHeight}px`)};
+  // Layout variables live on the small wrapper around the dock and jump buttons, not on <html>:
+  // changing an inherited custom property at the root restyles every reply on the page.
+  const scope=el.closest<HTMLElement>('.thread-tools')||document.documentElement,root=document.documentElement;
+  const measure=()=>{const h=Math.ceil(el.getBoundingClientRect().height);setHeight(h);scope.style.setProperty('--rp-dock-height',`${h}px`);root.style.scrollPaddingBottom=`${h+16}px`};
+  const viewport=()=>{const v=window.visualViewport;scope.style.setProperty('--rp-keyboard-offset',`${v?Math.max(0,window.innerHeight-v.height-v.offsetTop):0}px`);scope.style.setProperty('--rp-visible-height',`${v?.height||window.innerHeight}px`)};
   const observer=new ResizeObserver(measure);observer.observe(el);measure();viewport();
   window.addEventListener('resize',viewport);window.visualViewport?.addEventListener('resize',viewport);window.visualViewport?.addEventListener('scroll',viewport);
-  return()=>{observer.disconnect();window.removeEventListener('resize',viewport);window.visualViewport?.removeEventListener('resize',viewport);window.visualViewport?.removeEventListener('scroll',viewport);for(const name of ['--rp-dock-height','--rp-keyboard-offset','--rp-visible-height'])document.documentElement.style.removeProperty(name)};
+  return()=>{observer.disconnect();window.removeEventListener('resize',viewport);window.visualViewport?.removeEventListener('resize',viewport);window.visualViewport?.removeEventListener('scroll',viewport);for(const name of ['--rp-dock-height','--rp-keyboard-offset','--rp-visible-height'])scope.style.removeProperty(name);root.style.scrollPaddingBottom=''};
  },[]);
  return <><div aria-hidden="true" style={{height:height+20}}/><section ref={ref} className="thread-dock" data-collapsed={collapsed?true:undefined} data-sized={!collapsed&&size!==null?true:undefined} style={{height:!collapsed&&size!==null?size:undefined}} aria-label="고정 레스 작성칸">
  {!collapsed&&<div className="dock-resize" role="separator" tabIndex={0} aria-label="작성칸 높이 조절" aria-orientation="horizontal" aria-valuemin={0} aria-valuemax={580} aria-valuenow={height} aria-valuetext={`${height}px, 위아래 방향키로 조절`} title="위아래로 끌어 크기 조절 · 두 번 클릭하면 기본 크기" onDoubleClick={()=>setSize(null)} onPointerDown={e=>{if(e.button!==0)return;e.preventDefault();drag.current={y:e.clientY,height:ref.current?.getBoundingClientRect().height||height};e.currentTarget.setPointerCapture(e.pointerId)}} onPointerMove={e=>{if(drag.current)resize(drag.current.height+drag.current.y-e.clientY)}} onPointerUp={e=>{drag.current=null;if(e.currentTarget.hasPointerCapture(e.pointerId))e.currentTarget.releasePointerCapture(e.pointerId)}} onPointerCancel={()=>{drag.current=null}} onLostPointerCapture={()=>{drag.current=null}} onKeyDown={e=>{if(e.key==='ArrowUp'||e.key==='ArrowDown'){e.preventDefault();resize(height+(e.key==='ArrowUp'?20:-20))}else if(e.key==='Home'){e.preventDefault();setSize(null)}}}><span/></div>}
- <div className="thread-dock-heading"><h2>{title}</h2>{size!==null&&<button type="button" className="btn dock-reset" onClick={()=>setSize(null)}>기본 크기</button>}<button type="button" className="btn" aria-expanded={!collapsed} aria-controls="thread-dock-body" onClick={()=>setCollapsed(v=>!v)}>{collapsed?<ChevronUp size={16}/>:<ChevronDown size={16}/>}작성칸 {collapsed?'펼치기':'접기'}</button></div>
+ <div className="thread-dock-heading" onClick={collapsed?()=>setCollapsed(false):undefined}><h2>{title}{collapsed&&hint&&<span className="dock-draft">{hint}</span>}</h2>{size!==null&&<button type="button" className="btn dock-reset" onClick={e=>{e.stopPropagation();setSize(null)}}>기본 크기</button>}<button type="button" className="btn" aria-expanded={!collapsed} aria-controls="thread-dock-body" onClick={e=>{e.stopPropagation();setCollapsed(v=>!v)}}>{collapsed?<ChevronUp size={16}/>:<ChevronDown size={16}/>}작성칸 {collapsed?'펼치기':'접기'}</button></div>
  <div id="thread-dock-body" className="thread-dock-body" hidden={collapsed}>{children}</div>
  </section></>;
 }
